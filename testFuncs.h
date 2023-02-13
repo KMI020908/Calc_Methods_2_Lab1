@@ -11,6 +11,10 @@ std::vector<Type> func1(Type t, std::vector<Type> &U){
 }
 
 
+template<typename Type>
+Type g(Type t, std::vector<Type> &x){
+    return exp(x[0]) * sin(x[1] * t + x[0]); 
+}
 
 
 #endif

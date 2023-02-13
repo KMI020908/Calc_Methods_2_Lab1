@@ -2718,6 +2718,26 @@ std::vector<std::vector<Type>> &solution){
     return n;
 }
 
+// Дифференцирование фнп
+template<typename Type>
+Type partialDiff(Type (*f)(Type t, std::vector<Type>& x), std::size_t varPosition, Type t, const std::vector<Type> &x, Type h){
+    std::size_t n = x.size(); 
+    if (varPosition > n){
+        return NAN;
+    }
+    std::vector<Type> tempVec;
+    for (std::size_t i = 0; i < n; i++){
+        tempVec.push_back(x[i]);
+    }
+    Type temp = x[varPosition];
+    tempVec[varPosition] = temp - h;
+    Type leftShift = f(t, tempVec);
+    tempVec[varPosition] = temp + h;
+    Type rightShift = f(t, tempVec);
+    Type diff = (rightShift - leftShift) / (2.0 * h);
+    return diff;
+}
+
 // Неявный метод Эйлера
 template<typename Type>
 std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,

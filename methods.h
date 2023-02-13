@@ -297,6 +297,9 @@ template<typename Type>
 Type getUniformGrid(Type a, Type b, std::size_t numOfFinElems, std::vector<Type> &xGrid);
 
 template<typename Type>
+Type partialDiff(Type (*f)(Type, std::vector<Type>&), std::size_t varPosition, Type t, const std::vector<Type> &x, Type h);
+
+template<typename Type>
 std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution);
 #endif
