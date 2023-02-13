@@ -50,6 +50,8 @@ int main(){
     std::size_t n = 0;
     std::cout << partialDiff(g, n, t, point, 1e-5);
     //std::cout << g(t, point);
+    std::cout << '\n';
+    std::cout << func1(0.0, U0)[1];
 
     return 0;
 }

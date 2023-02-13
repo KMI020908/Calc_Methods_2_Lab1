@@ -2738,10 +2738,30 @@ Type partialDiff(Type (*f)(Type t, std::vector<Type>& x), std::size_t varPositio
     return diff;
 }
 
+// Дифференцирование фнп для n уравнений
+template<typename Type>
+Type partialDiff(std::vector<Type> (*fSys)(Type t, std::vector<Type>& x), std::size_t eqPosition, std::size_t varPosition, Type t, const std::vector<Type> &x, Type h){
+    std::size_t n = x.size(); 
+    if (varPosition > n || eqPosition > n){
+        return NAN;
+    }
+    std::vector<Type> tempVec;
+    for (std::size_t i = 0; i < n; i++){
+        tempVec.push_back(x[i]);
+    }
+    Type temp = x[varPosition];
+    tempVec[varPosition] = temp - h;
+    Type leftShift = fSys(t, tempVec)[eqPosition];
+    tempVec[varPosition] = temp + h;
+    Type rightShift = fSys(t, tempVec)[eqPosition];
+    Type diff = (rightShift - leftShift) / (2.0 * h);
+    return diff;
+}
+
 // Неявный метод Эйлера
 template<typename Type>
 std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution){
+std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::size_t n = U0.size();
@@ -2752,15 +2772,29 @@ std::vector<std::vector<Type>> &solution){
     for (std::size_t i = 0; i < n; i++){
         solution[i].push_back(U0[i]);
     }
-    std::vector<Type> y;
+    std::vector<Type> YVec;
     for (std::size_t i = 0; i < n; i++){
-        y.push_back(U0[i]);
+        YVec.push_back(U0[i]);
     }
-    for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        y = y + tau * f(tGrid[k], y);
-        for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
+    std::vector<Type> prevYVec;
+    for (std::size_t i = 0; i < n; i++){
+        prevYVec.push_back(U0[i] + eps)
+    }
+    for (std::size_t k = 0; k < numOfTimeInterv - 1; k++){ // Цикл по времени 
+        while (normOfVector(YVec - prevYVec, 2.0) > eps){ // Цикл решения системы внешними итерациями по Зейделю
+            for (std::size_t i = 0; i < n; i++){
+                prevYVec[i] = YVec[i];
+            }
+            for (std::size_t i = 0; i < n; i++){ // Проход по n скалярным уравнениям 
+                Type prevY = YVec[i];
+                for (std::size_t m = 0; m < iterParam; m++){ // Проходы по методу Ньютона
+                    YVec[i] = YVec[i] - (YVec[i] - prevYVec[i] - tau * f(tGrid[k + 1], YVec)[i]) / (1.0 - tau * partialDiff(f, i, i, tGrid[k + 1], YVec, h));
+                }
+            }
         }
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(YVec[i]);
+        }     
     }
     return n;
 }
