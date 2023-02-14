@@ -37,7 +37,7 @@ int main(){
     double t0 = 0.0;
     double T = 2.0 * M_PI;
     std::vector<double> U0 = {1.0, 0.0};
-    std::size_t numOfTimeInt = 50;
+    std::size_t numOfTimeInt = 6;
     forwardEulerMethod(func1, t0, T, U0, numOfTimeInt, solution);
     std::vector<double> tGrid;
     getUniformGrid(t0, T, numOfTimeInt, tGrid);
@@ -45,13 +45,6 @@ int main(){
     std::cout << solution[0] << '\n' << '\n';
     std::cout << solution[1] << '\n' << '\n';
 
-    std::vector<double> point = {1.0, 2.1};
-    double t = -0.8;
-    std::size_t n = 0;
-    std::cout << partialDiff(g, n, t, point, 1e-5);
-    //std::cout << g(t, point);
-    std::cout << '\n';
-    std::cout << func1(0.0, U0)[1];
 
     return 0;
 }
