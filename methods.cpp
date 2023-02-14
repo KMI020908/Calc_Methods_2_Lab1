@@ -2675,9 +2675,10 @@ Type getConvergEstimateNewthon(Type (*f)(Type x), Type x_0, Type realX, Type h, 
 
 
 
-// Методы 6-й семестр
+// Методы вычислений 6-й семестр
 
 // Лаб 1
+
 template<typename Type>
 Type getUniformGrid(Type a, Type b, std::size_t numOfFinElems, std::vector<Type> &xGrid){
     if (b <= a){
@@ -2848,6 +2849,84 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
     return n;
 }
 
+// 2 - х шаговый метод Рунге - Кутты 
+template<typename Type>
+std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution){
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    std::size_t n = U0.size();
+    solution.resize(n);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].clear();
+    }
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(U0[i]);
+    }
+    std::vector<Type> y;
+    for (std::size_t i = 0; i < n; i++){
+        y.push_back(U0[i]);
+    }
+    std::vector<Type> k1(n);
+    std::vector<Type> k2(n);
+    std::vector<Type> shiftY(n);
+    for (std::size_t k = 0; k < numOfTimeInterv; k++){
+        for (std::size_t i = 0; i < n; i++){
+            k1[i] = f(tGrid[k], y)[i];
+        }
+        for (std::size_t i = 0; i < n; i++){
+            for (std::size_t j = 0; j < n; j++){
+                shiftY[j] = y[j] + (tau / 2.0) * k1[j];
+            }
+            k2[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
+        }
+        y = y + tau * k2;
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(y[i]);
+        }
+    }
+    return n;
+}
+
+template<typename Type>
+std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution){
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    std::size_t n = U0.size();
+    solution.resize(n);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].clear();
+    }
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(U0[i]);
+    }
+    std::vector<Type> y;
+    for (std::size_t i = 0; i < n; i++){
+        y.push_back(U0[i]);
+    }
+    std::vector<Type> k1(n);
+    std::vector<Type> k2(n);
+    std::vector<Type> shiftY(n);
+    for (std::size_t k = 0; k < numOfTimeInterv; k++){
+        for (std::size_t i = 0; i < n; i++){
+            k1[i] = f(tGrid[k], y)[i];
+        }
+        for (std::size_t i = 0; i < n; i++){
+            for (std::size_t j = 0; j < n; j++){
+                shiftY[j] = y[j] + (tau / 2.0) * k1[j];
+            }
+            k2[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
+        }
+        y = y + tau * k2;
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(y[i]);
+        }
+    }
+    return n;
+}
+
+// Оценка скорости сходимости для разных методов
 template<typename Type>
 Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
@@ -2865,6 +2944,12 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             break;
         case SYM_SCHEME:
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);

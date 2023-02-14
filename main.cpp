@@ -45,8 +45,37 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
 }
 
 template<typename Type>
+void checkTestRungeKutta(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH){
+    std::size_t n = U0.size(); // Размерность задачи
+    std::vector<double> tGrid; // Временная сетка
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Шаг сетки
+    std::vector<Type> dataVec = {t0, T, tau};
+    std::vector<std::vector<double>> solution; // Матрица решений
+
+    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution);
+    writeScalarFile(n, TW_RG_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, TW_RG_FILE_PATH, true);
+    writeVectorFile(dataVec, TW_RG_FILE_PATH, true);
+    writeVectorFile(tGrid, TW_RG_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], TW_RG_FILE_PATH, true);
+    }
+
+    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution);
+    writeScalarFile(n, FO_RG_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, FO_RG_FILE_PATH, true);
+    writeVectorFile(dataVec, FO_RG_FILE_PATH, true);
+    writeVectorFile(tGrid, FO_RG_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], FO_RG_FILE_PATH, true);
+    }
+}
+
+template<typename Type>
 void checkSpeedEst(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-const std::string &SPEED_FW_E_FILE_PATH, const std::string &SPEED_BW_E_FILE_PATH, const std::string &SPEED_SYM_E_FILE_PATH, 
+const std::string &SPEED_FW_E_FILE_PATH, const std::string &SPEED_BW_E_FILE_PATH, const std::string &SPEED_SYM_E_FILE_PATH,
+const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, 
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     std::vector<Type> speedEstimate;
     getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, FW_EULER, speedEstimate, h, eps, iterParam);
@@ -55,6 +84,10 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeVectorFile(speedEstimate, SPEED_BW_E_FILE_PATH);
     getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, SYM_SCHEME, speedEstimate, h, eps, iterParam);
     writeVectorFile(speedEstimate, SPEED_SYM_E_FILE_PATH);
+    getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, TWICE_RG, speedEstimate, h, eps, iterParam);
+    writeVectorFile(speedEstimate, SPEED_RG_2_FILE_PATH);
+    getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, FOURTH_RG, speedEstimate, h, eps, iterParam);
+    writeVectorFile(speedEstimate, SPEED_RG_4_FILE_PATH);
 }
 
 template<typename Type>
@@ -67,7 +100,9 @@ void temp_main(){
     Type eps = 1e-6;
     std::size_t iterParam = 1;
     checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
-    checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, h, eps, iterParam);
+    checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1);
+    checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
+    SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1,  h, eps, iterParam);
 
     t0 = 0.0;
     T = 200.0;
@@ -78,9 +113,10 @@ void temp_main(){
     eps = 1e-6;
     iterParam = 1;
     checkTestEuler(sysVar1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_2, BW_E_FILE_PATH_2, SYM_E_FILE_PATH_2, h, eps, iterParam);
-    checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2, h, eps, iterParam);
+    checkTestRungeKutta(sysVar1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_2, FO_RG_FILE_PATH_2);
+    checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
+    SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, h, eps, iterParam);
 
-    
 }
 
 int main(){
