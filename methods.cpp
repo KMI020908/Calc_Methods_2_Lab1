@@ -2847,3 +2847,70 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
     }
     return n;
 }
+
+template<typename Type>
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
+    speedResult.clear();
+    std::size_t n = numOfTimeInterv + 1;
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
+    std::vector<std::vector<Type>> solution;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f1;
+    for (std::size_t k = 0; k < n; k++){
+        f1.push_back(solution[0][k]);
+    }
+    n = 2 * numOfTimeInterv;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f2;
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        f2.push_back(solution[0][2 * k]);
+    }
+    n = 4 * numOfTimeInterv;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f3;
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        f3.push_back(solution[0][4 * k]);
+    }
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        speedResult.push_back(std::abs((f1[k] - f2[k]) / (f2[k] - f3[k])));
+    }
+    return tau;
+}

@@ -47,4 +47,10 @@ enum VARIABLE_FLAG{
     Y  // 1  
 };
 
+enum DIFF_METHOD_FLAG{
+    FW_EULER, // 0
+    BW_EULER, // 1
+    SYM_SCHEME // 2
+};
+
 #endif 
