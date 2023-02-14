@@ -188,6 +188,23 @@ FILE_FLAG writeQRMatrix(const std::vector<std::vector<Type>> &Q, const std::vect
 }
 
 template<typename Type>
+FILE_FLAG writeScalarFile(Type num, const std::string& OUT_FILE_PATH, bool add){
+	std::ofstream file;
+	if (add){
+        file.open(OUT_FILE_PATH, std::ios::app);
+        file << '\n' << '\n';
+    }
+    else{
+        file.open(OUT_FILE_PATH);
+    }
+	if (!file.is_open())
+		exit(NOT_OPEN);
+    file << num;
+	file.close();
+	return IS_CLOSED;
+}
+
+template<typename Type>
 FILE_FLAG writeMatrixFile(const std::vector<std::vector<Type>> &matrix, const std::string& OUT_FILE_PATH, bool add){
     std::ofstream file;
 	if (add){

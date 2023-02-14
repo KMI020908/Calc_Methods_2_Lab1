@@ -6,8 +6,13 @@
 
 // Вектор функция для решения ОДУ
 template<typename Type>
-std::vector<Type> func1(Type t, std::vector<Type> &U){
+std::vector<Type> sys1(Type t, std::vector<Type> &U){
     return std::vector{U[1], -U[0]};
+}
+
+template<typename Type>
+std::vector<Type> funcVar9(Type t, std::vector<Type> &U){
+    return std::vector<Type>{};
 }
 
 

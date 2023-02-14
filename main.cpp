@@ -8,27 +8,50 @@
 
 // Процедура проверки решений уравнения методами бисекции и НьютонаЫ 
 template<typename Type>
-void checkTestEquations(Type (*f)(Type x), Type firstX, Type lastX, Type x0,
-const std::string &B_EQ_FILE_PATH, const std::string &N_EQ_FILE_PATH, Type accuracy = 1e-6, Type h = 1e-4, std::size_t stopIt = 10000, std::size_t n = 51){
-    
-    
-}
+void checkTestEuler(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+const std::string &FW_E_FILE_PATH, const std::string &BW_E_FILE_PATH, const std::string &SYM_E_FILE_PATH, 
+Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
+    std::size_t n = U0.size(); // Размерность задачи
+    std::vector<double> tGrid; // Временная сетка
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Шаг сетки
+    std::vector<Type> dataVec = {t0, T, tau};
+    std::vector<std::vector<double>> solution; // Матрица решений
 
-// Процедура проверки систем уравнений методом Ньютона
-template<typename Type>
-void checkTestSystem(Type (*f1)(Type x, Type y), Type (*f2)(Type x, Type y), std::vector<Type> (*getJacobiMatrixElems)(Type x, Type y), 
-Type x0, Type y0, Type L1, Type L2, std::size_t N, const std::string &N_SYS_FILE_PATH, const std::string &A_N_SYS_FILE_PATH, 
-const std::string &IT_SYS_FILE_PATH, const std::string &A_IT_SYS_FILE_PATH, Type h = 1e-4, Type accuracy = 1e-6, std::size_t stopIt = 10000){
-    
+    forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution); // Явный метод Эйлера
+    writeScalarFile(n, FW_E_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, FW_E_FILE_PATH, true);
+    writeVectorFile(dataVec, FW_E_FILE_PATH, true);
+    writeVectorFile(tGrid, FW_E_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], FW_E_FILE_PATH, true);
+    }
+
+    backwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution); // Неявный метод Эйлера
+    writeScalarFile(n, BW_E_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, BW_E_FILE_PATH, true);
+    writeVectorFile(dataVec, BW_E_FILE_PATH, true);
+    writeVectorFile(tGrid, BW_E_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], BW_E_FILE_PATH, true);
+    }
 }
 
 template<typename Type>
 void temp_main(){
-    
+    Type t0 = 0.0;
+    Type T = 2.0 * 3.14;
+    std::vector<Type> U0 = {1.0, 0.0};
+    std::size_t numOfTimeIntervals = 100;
+    Type h = 1e-4;
+    Type eps = 1e-6;
+    std::size_t iterParam = 1;
+    checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1);
 }
 
 int main(){
-    //temp_main<double>();
+    temp_main<double>();
+
+    /*
     std::vector<double> xGrid;
     getUniformGrid(0.0, 1.0, 2, xGrid);
     std::cout << xGrid << '\n';
@@ -44,6 +67,7 @@ int main(){
     std::cout << tGrid << '\n' << '\n';
     std::cout << solution[0] << '\n' << '\n';
     std::cout << solution[1] << '\n' << '\n';
+    */
 
 
     return 0;

@@ -41,6 +41,9 @@ template<typename Type>
 FILE_FLAG writeVectorFile(const std::vector<Type> &vector, const std::string& OUT_FILE_PATH, bool add = false);
 
 template<typename Type>
+FILE_FLAG writeScalarFile(Type num, const std::string& OUT_FILE_PATH, bool add = false);
+
+template<typename Type>
 FILE_FLAG writeResidual(Type residual, const std::string& OUT_FILE_PATH);
 
 template<typename Type>
