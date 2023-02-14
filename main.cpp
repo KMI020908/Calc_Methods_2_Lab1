@@ -108,7 +108,7 @@ void temp_main(){
     T = 200.0;
     U0[0] = 0.1;
     U0[1] = 0.1;
-    numOfTimeIntervals = 2000;
+    numOfTimeIntervals = 20000;
     h = 1e-4;
     eps = 1e-6;
     iterParam = 1;

@@ -2984,6 +2984,12 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
         case SYM_SCHEME:
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
             break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3001,6 +3007,12 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             break;
         case SYM_SCHEME:
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
