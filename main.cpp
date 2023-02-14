@@ -95,7 +95,7 @@ void temp_main(){
     Type t0 = 0.0;
     Type T = 2.0 * 3.14;
     std::vector<Type> U0 = {1.0, 0.0};
-    std::size_t numOfTimeIntervals = 6;
+    std::size_t numOfTimeIntervals = 100;
     Type h = 1e-4;
     Type eps = 1e-6;
     std::size_t iterParam = 1;
@@ -114,7 +114,7 @@ void temp_main(){
     iterParam = 1;
     checkTestEuler(sysVar1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_2, BW_E_FILE_PATH_2, SYM_E_FILE_PATH_2, h, eps, iterParam);
     checkTestRungeKutta(sysVar1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_2, FO_RG_FILE_PATH_2);
-    checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
+    checkSpeedEst(sysVar1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
     SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, h, eps, iterParam);
 
 }

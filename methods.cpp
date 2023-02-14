@@ -2888,6 +2888,7 @@ std::vector<std::vector<Type>> &solution){
     return n;
 }
 
+// 4 - х шаговый метод Рунге - Кутты 
 template<typename Type>
 std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
@@ -2907,6 +2908,8 @@ std::vector<std::vector<Type>> &solution){
     }
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
+    std::vector<Type> k3(n);
+    std::vector<Type> k4(n);
     std::vector<Type> shiftY(n);
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
         for (std::size_t i = 0; i < n; i++){
@@ -2918,7 +2921,19 @@ std::vector<std::vector<Type>> &solution){
             }
             k2[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
         }
-        y = y + tau * k2;
+        for (std::size_t i = 0; i < n; i++){
+            for (std::size_t j = 0; j < n; j++){
+                shiftY[j] = y[j] + (tau / 2.0) * k2[j];
+            }
+            k3[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
+        }
+        for (std::size_t i = 0; i < n; i++){
+            for (std::size_t j = 0; j < n; j++){
+                shiftY[j] = y[j] + tau * k3[j];
+            }
+            k4[i] = f(tGrid[k] + tau, shiftY)[i];
+        }
+        y = y + (tau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
         for (std::size_t i = 0; i < n; i++){
             solution[i].push_back(y[i]);
         }
