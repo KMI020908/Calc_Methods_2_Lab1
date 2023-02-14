@@ -2800,3 +2800,48 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
     }
     return n;
 }
+
+// Неявный метод Эйлера
+template<typename Type>
+std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
+    std::size_t n = U0.size();
+    solution.resize(n);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].clear();
+    }
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(U0[i]);
+    }
+    std::vector<Type> YVec;
+    for (std::size_t i = 0; i < n; i++){
+        YVec.push_back(U0[i]);
+    }
+    std::vector<Type> prevYVec;
+    for (std::size_t i = 0; i < n; i++){
+        prevYVec.push_back(YVec[i] + 2.0 * eps);
+    }
+    
+    for (std::size_t k = 0; k < numOfTimeInterv; k++){ // Цикл по времени 
+        
+        while (normOfVector(YVec - prevYVec, 2.0) > eps){ // Цикл решения системы внешними итерациями по Зейделю
+            for (std::size_t i = 0; i < n; i++){
+                prevYVec[i] = YVec[i];
+            }
+            for (std::size_t i = 0; i < n; i++){ // Проход по n скалярным уравнениям 
+                for (std::size_t m = 0; m < iterParam; m++){ // Проходы по методу Ньютона
+                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - (tau / 2.0) * (f(tGrid[k + 1], YVec)[i])) / (1.0 - (tau / 2.0) * partialDiff(f, i, i, tGrid[k + 1], YVec, h));
+                }
+            }
+        }
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(YVec[i]);
+        }
+        for (std::size_t i = 0; i < n; i++){
+            prevYVec[i] = YVec[i] + 2.0 * eps;
+        }     
+    }
+    return n;
+}
