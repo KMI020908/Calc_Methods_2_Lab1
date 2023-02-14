@@ -11,14 +11,14 @@ std::vector<Type> sys1(Type t, std::vector<Type> &U){
 }
 
 template<typename Type>
-std::vector<Type> funcVar9(Type t, std::vector<Type> &U){
-    return std::vector<Type>{};
+std::vector<Type> sysVar1(Type t, std::vector<Type> &U){
+    return std::vector<Type>{U[1], 0.6 * U[1] - 0.6 * std::pow(U[0], 2.0) * U[1] - U[0]};
 }
 
 
 template<typename Type>
-Type g(Type t, std::vector<Type> &x){
-    return exp(x[0]) * sin(x[1] * t + x[0]); 
+std::vector<Type> sysVar9(Type t, std::vector<Type> &U){
+    return std::vector<Type>{};
 }
 
 

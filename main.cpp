@@ -26,13 +26,22 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
         writeVectorFile(solution[i], FW_E_FILE_PATH, true);
     }
 
-    backwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution); // Неявный метод Эйлера
+    backwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam); // Неявный метод Эйлера
     writeScalarFile(n, BW_E_FILE_PATH);
     writeScalarFile(numOfTimeInterv, BW_E_FILE_PATH, true);
     writeVectorFile(dataVec, BW_E_FILE_PATH, true);
     writeVectorFile(tGrid, BW_E_FILE_PATH, true);
     for (std::size_t i = 0; i < n; i++){
         writeVectorFile(solution[i], BW_E_FILE_PATH, true);
+    }
+
+    symmetricScheme(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam); // Симметричная схема
+    writeScalarFile(n, SYM_E_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, SYM_E_FILE_PATH, true);
+    writeVectorFile(dataVec, SYM_E_FILE_PATH, true);
+    writeVectorFile(tGrid, SYM_E_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], SYM_E_FILE_PATH, true);
     }
 }
 
@@ -45,7 +54,18 @@ void temp_main(){
     Type h = 1e-4;
     Type eps = 1e-6;
     std::size_t iterParam = 1;
-    checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1);
+    checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
+
+    t0 = 0.0;
+    T = 200.0;
+    U0[0] = 0.1;
+    U0[1] = 0.1;
+    numOfTimeIntervals = 2000;
+    h = 1e-4;
+    eps = 1e-6;
+    iterParam = 1;
+    checkTestEuler(sysVar1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_2, BW_E_FILE_PATH_2, SYM_E_FILE_PATH_2, h, eps, iterParam);
+    
 }
 
 int main(){

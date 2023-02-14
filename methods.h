@@ -309,4 +309,9 @@ std::vector<std::vector<Type>> &solution);
 template<typename Type>
 std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
+
+template<typename Type>
+std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
+
 #endif
