@@ -217,16 +217,8 @@ FILE_FLAG writeMatrixFile(const std::vector<std::vector<Type>> &matrix, const st
 	if (!file.is_open())
 		exit(NOT_OPEN);
     std::size_t rows = matrix.size();
-    std::size_t cols = 0;
-    if (rows != 0){
-        cols = matrix[0].size();
-    }
-    else{
-        file.close();
-        return IS_CLOSED;
-    }
     for (std::size_t i = 0; i < rows; i++){
-        for (std::size_t j = 0; j < cols; j++){
+        for (std::size_t j = 0; j < matrix[i].size(); j++){
             file << matrix[i][j] << '\t';
         }
         file << '\n';
