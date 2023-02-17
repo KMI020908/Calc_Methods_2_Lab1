@@ -3145,3 +3145,90 @@ DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &da
     }
     return solution.size();
 }
+
+template<typename Type>
+std::size_t iterationOfRungeKutta4(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t, Type tau,
+const std::vector<Type> &y0, std::vector<Type> &y){
+    std::size_t n = y0.size();
+    y.resize(n);
+    std::vector<Type> k1(n);
+    std::vector<Type> k2(n);
+    std::vector<Type> k3(n);
+    std::vector<Type> k4(n);
+    std::vector<Type> shiftY(n);
+    for (std::size_t i = 0; i < n; i++){
+        k1[i] = f(t, y0)[i];
+    }
+    for (std::size_t i = 0; i < n; i++){
+        for (std::size_t j = 0; j < n; j++){
+            shiftY[j] = y0[j] + (tau / 2.0) * k1[j];
+        }
+        k2[i] = f(t + tau / 2.0, shiftY)[i];
+    }
+    for (std::size_t i = 0; i < n; i++){
+        for (std::size_t j = 0; j < n; j++){
+            shiftY[j] = y0[j] + (tau / 2.0) * k2[j];
+        }
+        k3[i] = f(t + tau / 2.0, shiftY)[i];
+    }
+    for (std::size_t i = 0; i < n; i++){
+        for (std::size_t j = 0; j < n; j++){
+            shiftY[j] = y0[j] + tau * k3[j];
+        }
+        k4[i] = f(t + tau, shiftY)[i];
+    }
+    y = y0 + (tau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+    return n;
+}
+
+
+template<typename Type>
+std::size_t AdamsMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+const std::vector<Type> &startY, std::vector<std::vector<Type>> &solution){
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    std::size_t n = U0.size();
+    solution.resize(n);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].clear();
+    }
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(U0[i]);
+    }
+    // Первые три итерации метода Рунге-Кутты 4-ого порядка
+    std::vector<Type> y0;
+    for (std::size_t i = 0; i < n; i++){
+        y0.push_back(U0);
+    }
+    std::vector<Type> y1;
+    iterationOfRungeKutta4(f, tGrid[0], tau, U0, y1);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(y1[i]);
+    }
+    std::vector<Type> y2;
+    iterationOfRungeKutta4(f, tGrid[1], tau, y1, y2);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(y2[i]);
+    }
+    std::vector<Type> y3;
+    iterationOfRungeKutta4(f, tGrid[2], tau, y2, y3);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(y3[i]);
+    }    
+    std::vector<Type> y(n);
+    // Итерации метода Адамса
+    for (std::size_t k = 3; k < numOfTimeInterv; k++){
+        y = y3 + (tau / 24.0) * (55.0 * f(tGrid[k], y3) - 59.0 * f(tGrid[k - 1], y2) + 37.0 * f(tGrid[k - 2], y1) - 9.0 * f(tGrid[k - 3], y0));
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(y[i]);
+        }
+        Type temp;
+        for (std::size_t i = 0; i < n; i++){
+            y0[i] = y1[i];
+            y1[i] = y2[i];
+            y2[i] = y3[i];
+            y3[i] = y[i];
+        }
+    }
+    return n;
+}
