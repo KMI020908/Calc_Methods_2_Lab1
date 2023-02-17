@@ -6,7 +6,7 @@
 
 // Вектор функция для решения ОДУ
 template<typename Type>
-std::vector<Type> sys1(Type t, std::vector<Type> &U){
+std::vector<Type> sys1(Type t, const std::vector<Type> &U){
     Type k = 1.0;
     Type m = 1.0;
     return std::vector{U[1], -k / m * U[0]};
@@ -20,13 +20,13 @@ Type realSolution1(Type t){
 
 
 template<typename Type>
-std::vector<Type> sysVar1(Type t, std::vector<Type> &U){
+std::vector<Type> sysVar1(Type t, const std::vector<Type> &U){
     return std::vector<Type>{U[1], 0.6 * U[1] - 0.6 * std::pow(U[0], 2.0) * U[1] - U[0]};
 }
 
 
 template<typename Type>
-std::vector<Type> sysVar9(Type t, std::vector<Type> &U){
+std::vector<Type> sysVar9(Type t, const std::vector<Type> &U){
     Type L = 1.0e7;
     Type C0 = 3.0e-7;
     Type R = 28;

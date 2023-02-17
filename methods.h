@@ -300,38 +300,46 @@ template<typename Type>
 Type partialDiff(Type (*f)(Type, std::vector<Type>&), std::size_t varPosition, Type t, const std::vector<Type> &x, Type h = 1e-4);
 
 template<typename Type>
-Type partialDiff(std::vector<Type> (*fSys)(Type t, std::vector<Type>& x), std::size_t eqPosition, std::size_t varPosition, Type t, const std::vector<Type> &x, Type h = 1e-4);
+Type partialDiff(std::vector<Type> (*fSys)(Type t, const std::vector<Type>& x), std::size_t eqPosition, std::size_t varPosition, Type t, const std::vector<Type> &x, Type h = 1e-4);
 
 template<typename Type>
-std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution);
 
 template<typename Type>
-std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 
 template<typename Type>
-std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 
 template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 
 template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam);
 
 template<typename Type>
-std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution);
 
 template<typename Type>
-std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution);
 
 template<typename Type>
-std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
+std::size_t iterationOfRungeKutta4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t, Type tau,
+const std::vector<Type> &y0, std::vector<Type> &y);
+
+template<typename Type>
+std::size_t AdamsMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution);
+
+template<typename Type>
+std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &dataMatrix, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 
 #endif

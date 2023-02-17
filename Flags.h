@@ -52,7 +52,9 @@ enum DIFF_METHOD_FLAG{
     BW_EULER, // 1
     SYM_SCHEME, // 2
     TWICE_RG, // 3
-    FOURTH_RG // 4
+    FOURTH_RG, // 4
+    FOURTH_AD, // 5
+    PREDICT_CORRECT // 6
 };
 
 #endif 

@@ -2694,7 +2694,7 @@ Type getUniformGrid(Type a, Type b, std::size_t numOfFinElems, std::vector<Type>
 
 // Явный метод Эйлера
 template<typename Type>
-std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
@@ -2741,7 +2741,7 @@ Type partialDiff(Type (*f)(Type t, std::vector<Type>& x), std::size_t varPositio
 
 // Дифференцирование фнп для n уравнений
 template<typename Type>
-Type partialDiff(std::vector<Type> (*fSys)(Type t, std::vector<Type>& x), std::size_t eqPosition, std::size_t varPosition, Type t, const std::vector<Type> &x, Type h){
+Type partialDiff(std::vector<Type>(*fSys)(Type t, const std::vector<Type> &x), std::size_t eqPosition, std::size_t varPosition, Type t, const std::vector<Type> &x, Type h){
     std::size_t n = x.size(); 
     if (varPosition > n || eqPosition > n){
         return NAN;
@@ -2761,7 +2761,7 @@ Type partialDiff(std::vector<Type> (*fSys)(Type t, std::vector<Type>& x), std::s
 
 // Неявный метод Эйлера
 template<typename Type>
-std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
@@ -2804,7 +2804,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
 
 // Cимметричная схема
 template<typename Type>
-std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
@@ -2851,7 +2851,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
 
 // 2 - х шаговый метод Рунге - Кутты 
 template<typename Type>
-std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
@@ -2890,7 +2890,7 @@ std::vector<std::vector<Type>> &solution){
 
 // 4 - х шаговый метод Рунге - Кутты 
 template<typename Type>
-std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
@@ -2943,7 +2943,7 @@ std::vector<std::vector<Type>> &solution){
 
 // Оценка скорости сходимости для разных методов при известном аналитическом решении
 template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
     speedResult.clear();
     std::size_t n = numOfTimeInterv + 1;
@@ -2964,7 +2964,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
             break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
@@ -2988,8 +2991,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
             break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3005,7 +3010,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
 
 // Оценка скорости сходимости для разных методов при неизвестном аналитическом решении
 template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
     speedResult.clear();
     std::size_t n = numOfTimeInterv + 1;
@@ -3026,8 +3031,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
             break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3050,8 +3057,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
             break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3074,8 +3083,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             RungeKuttaMethod2(f, t0, T, U0, n, solution);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
             break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3091,7 +3102,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
 
 // Фазовая плоскость
 template<typename Type>
-std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
+std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &dataMatrix, Type h, Type eps, std::size_t iterParam){
     for (std::size_t i = 0; i < dataMatrix.size(); i++){
         dataMatrix[i].clear();
@@ -3129,8 +3140,10 @@ DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &da
                     RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution);
                     break;
                 case FOURTH_RG:
-                    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution);
+                    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution);
                     break;
+                case FOURTH_AD:
+                    AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution);
                 default:
                     forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
             }
@@ -3147,7 +3160,7 @@ DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &da
 }
 
 template<typename Type>
-std::size_t iterationOfRungeKutta4(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t, Type tau,
+std::size_t iterationOfRungeKutta4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t, Type tau,
 const std::vector<Type> &y0, std::vector<Type> &y){
     std::size_t n = y0.size();
     y.resize(n);
@@ -3183,8 +3196,8 @@ const std::vector<Type> &y0, std::vector<Type> &y){
 
 
 template<typename Type>
-std::size_t AdamsMethod(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-const std::vector<Type> &startY, std::vector<std::vector<Type>> &solution){
+std::size_t AdamsMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution){
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::size_t n = U0.size();
@@ -3198,7 +3211,7 @@ const std::vector<Type> &startY, std::vector<std::vector<Type>> &solution){
     // Первые три итерации метода Рунге-Кутты 4-ого порядка
     std::vector<Type> y0;
     for (std::size_t i = 0; i < n; i++){
-        y0.push_back(U0);
+        y0.push_back(U0[i]);
     }
     std::vector<Type> y1;
     iterationOfRungeKutta4(f, tGrid[0], tau, U0, y1);

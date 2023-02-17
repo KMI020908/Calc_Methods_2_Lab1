@@ -6,8 +6,9 @@
 #include"testFuncs.h"
 #include<algorithm>
 
+// Проверка методов Эйлера
 template<typename Type>
-void checkTestEuler(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+void checkTestEuler(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 const std::string &FW_E_FILE_PATH, const std::string &BW_E_FILE_PATH, const std::string &SYM_E_FILE_PATH, 
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     std::size_t n = U0.size(); // Размерность задачи
@@ -44,8 +45,9 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     }
 }
 
+// Проверка методов Рунге-Кутты
 template<typename Type>
-void checkTestRungeKutta(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+void checkTestRungeKutta(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH){
     std::size_t n = U0.size(); // Размерность задачи
     std::vector<double> tGrid; // Временная сетка
@@ -72,9 +74,38 @@ const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH){
     }
 }
 
-// Когда неизвестно решение
+// Проверка методов Адамса
 template<typename Type>
-void checkSpeedEst(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+void checkTestAdams(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+const std::string &FO_AD_FILE_PATH, const std::string &PC_AD_FILE_PATH){
+    std::size_t n = U0.size(); // Размерность задачи
+    std::vector<double> tGrid; // Временная сетка
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Шаг сетки
+    std::vector<Type> dataVec = {t0, T, tau};
+    std::vector<std::vector<double>> solution; // Матрица решений
+
+    AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution); // Метод Aдамса 4-х шаговый
+    writeScalarFile(n, FO_AD_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, FO_AD_FILE_PATH, true);
+    writeVectorFile(dataVec, FO_AD_FILE_PATH, true);
+    writeVectorFile(tGrid, FO_AD_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], FO_AD_FILE_PATH, true);
+    }
+
+    AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution); // Метод предсказание-коррекция 
+    writeScalarFile(n, PC_AD_FILE_PATH);
+    writeScalarFile(numOfTimeInterv, PC_AD_FILE_PATH, true);
+    writeVectorFile(dataVec, PC_AD_FILE_PATH, true);
+    writeVectorFile(tGrid, PC_AD_FILE_PATH, true);
+    for (std::size_t i = 0; i < n; i++){
+        writeVectorFile(solution[i], PC_AD_FILE_PATH, true);
+    }
+}
+
+// Оценка скорости, когда неизвестно решение
+template<typename Type>
+void checkSpeedEst(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 const std::string &SPEED_FW_E_FILE_PATH, const std::string &SPEED_BW_E_FILE_PATH, const std::string &SPEED_SYM_E_FILE_PATH,
 const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, 
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
@@ -91,9 +122,9 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeVectorFile(speedEstimate, SPEED_RG_4_FILE_PATH);
 }
 
-// Когда известно решение
+// Оценка скорости, когда известно решение
 template<typename Type>
-void checkSpeedEst(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+void checkSpeedEst(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 const std::string &SPEED_FW_E_FILE_PATH, const std::string &SPEED_BW_E_FILE_PATH, const std::string &SPEED_SYM_E_FILE_PATH,
 const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, 
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
@@ -110,9 +141,9 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeVectorFile(speedEstimate, SPEED_RG_4_FILE_PATH);
 }
 
-// Когда известно решение
+// Фазовые траектории
 template<typename Type>
-void checkPhaseTraces(std::vector<Type>(*f)(Type t, std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, Type L, std::size_t N,
+void checkPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, Type L, std::size_t N,
 const std::string &PHASE_FW_E_FILE_PATH, const std::string &PHASE_BW_E_FILE_PATH, const std::string &PHASE_SYM_E_FILE_PATH,
 const std::string &PHASE_RG_2_FILE_PATH, const std::string &PHASE_RG_4_FILE_PATH, 
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
@@ -140,6 +171,7 @@ void temp_main(){
     std::size_t iterParam = 1;
     checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
     checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1);
+    checkTestAdams(sys1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_1, PC_AD_FILE_PATH_1);
     checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
     SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1,  h, eps, iterParam);
     Type L = 20.0;
@@ -157,6 +189,7 @@ void temp_main(){
     iterParam = 1;
     checkTestEuler(sysVar1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_2, BW_E_FILE_PATH_2, SYM_E_FILE_PATH_2, h, eps, iterParam);
     checkTestRungeKutta(sysVar1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_2, FO_RG_FILE_PATH_2);
+    checkTestAdams(sysVar1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_2, PC_AD_FILE_PATH_2);
     checkSpeedEst(sysVar1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
     SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, h, eps, iterParam);
     L = 20.0;
@@ -174,6 +207,7 @@ void temp_main(){
     iterParam = 1;
     checkTestEuler(sysVar9, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_3, BW_E_FILE_PATH_3, SYM_E_FILE_PATH_3, h, eps, iterParam);
     checkTestRungeKutta(sysVar9, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_3, FO_RG_FILE_PATH_3);
+    checkTestAdams(sysVar9, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_3, PC_AD_FILE_PATH_3);
     checkSpeedEst(sysVar9, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_3, SPEED_BW_E_FILE_PATH_3, SPEED_SYM_E_FILE_PATH_3,
     SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, h, eps, iterParam);
     L = 20.0;
