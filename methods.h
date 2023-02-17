@@ -339,6 +339,10 @@ std::size_t AdamsMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U
 std::vector<std::vector<Type>> &solution);
 
 template<typename Type>
+std::size_t predicCorrect(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution);
+
+template<typename Type>
 std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &dataMatrix, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 

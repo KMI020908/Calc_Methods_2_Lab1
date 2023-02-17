@@ -93,7 +93,7 @@ const std::string &FO_AD_FILE_PATH, const std::string &PC_AD_FILE_PATH){
         writeVectorFile(solution[i], FO_AD_FILE_PATH, true);
     }
 
-    AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution); // Метод предсказание-коррекция 
+    predicCorrect(f, t0, T, U0, numOfTimeInterv, solution); // Метод предсказание-коррекция 
     writeScalarFile(n, PC_AD_FILE_PATH);
     writeScalarFile(numOfTimeInterv, PC_AD_FILE_PATH, true);
     writeVectorFile(dataVec, PC_AD_FILE_PATH, true);
@@ -107,7 +107,7 @@ const std::string &FO_AD_FILE_PATH, const std::string &PC_AD_FILE_PATH){
 template<typename Type>
 void checkSpeedEst(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 const std::string &SPEED_FW_E_FILE_PATH, const std::string &SPEED_BW_E_FILE_PATH, const std::string &SPEED_SYM_E_FILE_PATH,
-const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, 
+const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, const std::string &SPEED_AD_4_FILE_PATH, const std::string &SPEED_PC_FILE_PATH,
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     std::vector<Type> speedEstimate;
     getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, FW_EULER, speedEstimate, h, eps, iterParam);
@@ -120,13 +120,17 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeVectorFile(speedEstimate, SPEED_RG_2_FILE_PATH);
     getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, FOURTH_RG, speedEstimate, h, eps, iterParam);
     writeVectorFile(speedEstimate, SPEED_RG_4_FILE_PATH);
+    getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, FOURTH_AD, speedEstimate, h, eps, iterParam);
+    writeVectorFile(speedEstimate, SPEED_AD_4_FILE_PATH);
+    getSpeedEstimateDiffSystem(f, t0, T, U0, numOfTimeInterv, PREDICT_CORRECT, speedEstimate, h, eps, iterParam);
+    writeVectorFile(speedEstimate, SPEED_PC_FILE_PATH);
 }
 
 // Оценка скорости, когда известно решение
 template<typename Type>
 void checkSpeedEst(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 const std::string &SPEED_FW_E_FILE_PATH, const std::string &SPEED_BW_E_FILE_PATH, const std::string &SPEED_SYM_E_FILE_PATH,
-const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, 
+const std::string &SPEED_RG_2_FILE_PATH, const std::string &SPEED_RG_4_FILE_PATH, const std::string &SPEED_AD_4_FILE_PATH, const std::string &SPEED_PC_FILE_PATH,
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     std::vector<Type> speedEstimate;
     getSpeedEstimateDiffSystem(f, realSolution, t0, T, U0, numOfTimeInterv, FW_EULER, speedEstimate, h, eps, iterParam);
@@ -139,13 +143,17 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeVectorFile(speedEstimate, SPEED_RG_2_FILE_PATH);
     getSpeedEstimateDiffSystem(f, realSolution, t0, T, U0, numOfTimeInterv, FOURTH_RG, speedEstimate, h, eps, iterParam);
     writeVectorFile(speedEstimate, SPEED_RG_4_FILE_PATH);
+    getSpeedEstimateDiffSystem(f, realSolution, t0, T, U0, numOfTimeInterv, FOURTH_AD, speedEstimate, h, eps, iterParam);
+    writeVectorFile(speedEstimate, SPEED_AD_4_FILE_PATH);
+    getSpeedEstimateDiffSystem(f, realSolution, t0, T, U0, numOfTimeInterv, PREDICT_CORRECT, speedEstimate, h, eps, iterParam);
+    writeVectorFile(speedEstimate, SPEED_PC_FILE_PATH);
 }
 
 // Фазовые траектории
 template<typename Type>
 void checkPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, Type L, std::size_t N,
 const std::string &PHASE_FW_E_FILE_PATH, const std::string &PHASE_BW_E_FILE_PATH, const std::string &PHASE_SYM_E_FILE_PATH,
-const std::string &PHASE_RG_2_FILE_PATH, const std::string &PHASE_RG_4_FILE_PATH, 
+const std::string &PHASE_RG_2_FILE_PATH, const std::string &PHASE_RG_4_FILE_PATH, const std::string &PHASE_AD_4_FILE_PATH, const std::string &PHASE_PC_FILE_PATH,
 Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     std::vector<std::vector<Type>> dataMatrix;
     getPhaseTraces(f, t0, T, numOfTimeInterv, FW_EULER, L, N, dataMatrix, h, eps, iterParam);
@@ -158,6 +166,10 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeMatrixFile(dataMatrix, PHASE_RG_2_FILE_PATH);
     getPhaseTraces(f, t0, T, numOfTimeInterv, FOURTH_RG, L, N, dataMatrix, h, eps, iterParam);
     writeMatrixFile(dataMatrix, PHASE_RG_4_FILE_PATH);
+    getPhaseTraces(f, t0, T, numOfTimeInterv, FOURTH_AD, L, N, dataMatrix, h, eps, iterParam);
+    writeMatrixFile(dataMatrix, PHASE_AD_4_FILE_PATH);
+    getPhaseTraces(f, t0, T, numOfTimeInterv, PREDICT_CORRECT, L, N, dataMatrix, h, eps, iterParam);
+    writeMatrixFile(dataMatrix, PHASE_PC_FILE_PATH);
 }
 
 template<typename Type>
@@ -172,12 +184,12 @@ void temp_main(){
     checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
     checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1);
     checkTestAdams(sys1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_1, PC_AD_FILE_PATH_1);
-    checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
-    SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1,  h, eps, iterParam);
+    checkSpeedEst(sys1, realSolution1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
+    SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1, SPEED_AD_4_FILE_PATH_1, SPEED_PC_FILE_PATH_1, h, eps, iterParam);
     Type L = 20.0;
     std::size_t N = 4;
-    checkPhaseTraces(sys1, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_1, PHASE_BW_E_FILE_PATH_1, 
-    PHASE_SYM_E_FILE_PATH_1, PHASE_RG_2_FILE_PATH_1, PHASE_RG_4_FILE_PATH_1, h, eps, iterParam);
+    //checkPhaseTraces(sys1, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_1, PHASE_BW_E_FILE_PATH_1, 
+    //PHASE_SYM_E_FILE_PATH_1, PHASE_RG_2_FILE_PATH_1, PHASE_RG_4_FILE_PATH_1, PHASE_AD_4_FILE_PATH_1, PHASE_PC_FILE_PATH_1, h, eps, iterParam);
 
     t0 = 0.0;
     T = 200.0;
@@ -191,11 +203,11 @@ void temp_main(){
     checkTestRungeKutta(sysVar1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_2, FO_RG_FILE_PATH_2);
     checkTestAdams(sysVar1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_2, PC_AD_FILE_PATH_2);
     checkSpeedEst(sysVar1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
-    SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, h, eps, iterParam);
+    SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, SPEED_AD_4_FILE_PATH_2, SPEED_PC_FILE_PATH_2, h, eps, iterParam);
     L = 20.0;
     N = 4;
     //checkPhaseTraces(sysVar1, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_2, PHASE_BW_E_FILE_PATH_2, 
-    //PHASE_SYM_E_FILE_PATH_2, PHASE_RG_2_FILE_PATH_2, PHASE_RG_4_FILE_PATH_2, h, eps, iterParam);
+    //PHASE_SYM_E_FILE_PATH_2, PHASE_RG_2_FILE_PATH_2, PHASE_RG_4_FILE_PATH_2, PHASE_AD_4_FILE_PATH_2, PHASE_PC_FILE_PATH_2, h, eps, iterParam);
 
     t0 = 0.0;
     T = 100.0;
@@ -209,11 +221,11 @@ void temp_main(){
     checkTestRungeKutta(sysVar9, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_3, FO_RG_FILE_PATH_3);
     checkTestAdams(sysVar9, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_3, PC_AD_FILE_PATH_3);
     checkSpeedEst(sysVar9, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_3, SPEED_BW_E_FILE_PATH_3, SPEED_SYM_E_FILE_PATH_3,
-    SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, h, eps, iterParam);
+    SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, SPEED_AD_4_FILE_PATH_3, SPEED_PC_FILE_PATH_3, h, eps, iterParam);
     L = 20.0;
     N = 4;
     //checkPhaseTraces(sysVar9, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_3, PHASE_BW_E_FILE_PATH_3, 
-    //PHASE_SYM_E_FILE_PATH_3, PHASE_RG_2_FILE_PATH_3, PHASE_RG_4_FILE_PATH_3, h, eps, iterParam);
+    //PHASE_SYM_E_FILE_PATH_3, PHASE_RG_2_FILE_PATH_3, PHASE_RG_4_FILE_PATH_3, PHASE_AD_4_FILE_PATH_3, PHASE_PC_FILE_PATH_3, h, eps, iterParam);
 
 }
 

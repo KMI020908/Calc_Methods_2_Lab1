@@ -2969,6 +2969,9 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
             break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -2995,6 +2998,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3003,7 +3010,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
         f2.push_back(solution[0][2 * k]);
     }
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        speedResult.push_back(std::log2(std::abs((f1[k] - realSolution(tGrid[k])) / (f2[k] - realSolution(tGrid[k])))));
+        speedResult.push_back(log2(std::abs((f1[k] - realSolution(tGrid[k])) / (f2[k] - realSolution(tGrid[k])))));
     }
     return tau;
 }
@@ -3035,6 +3042,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3061,6 +3072,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3087,6 +3102,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
         default:
             forwardEulerMethod(f, t0, T, U0, n, solution);
     }
@@ -3095,7 +3114,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
         f3.push_back(solution[0][4 * k]);
     }
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        speedResult.push_back(std::log2(std::abs((f1[k] - f2[k]) / (f2[k] - f3[k]))));
+        speedResult.push_back(log2(std::abs((f1[k] - f2[k]) / (f2[k] - f3[k]))));
     }
     return tau;
 }
@@ -3144,6 +3163,10 @@ DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &da
                     break;
                 case FOURTH_AD:
                     AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
+                case PREDICT_CORRECT:
+                    predicCorrect(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
                 default:
                     forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
             }
@@ -3235,7 +3258,61 @@ std::vector<std::vector<Type>> &solution){
         for (std::size_t i = 0; i < n; i++){
             solution[i].push_back(y[i]);
         }
-        Type temp;
+        for (std::size_t i = 0; i < n; i++){
+            y0[i] = y1[i];
+            y1[i] = y2[i];
+            y2[i] = y3[i];
+            y3[i] = y[i];
+        }
+    }
+    return n;
+}
+
+template<typename Type>
+std::size_t predicCorrect(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution){
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    std::size_t n = U0.size();
+    solution.resize(n);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].clear();
+    }
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(U0[i]);
+    }
+    // Первые три итерации метода Рунге-Кутты 4-ого порядка
+    std::vector<Type> y0;
+    for (std::size_t i = 0; i < n; i++){
+        y0.push_back(U0[i]);
+    }
+    std::vector<Type> y1;
+    iterationOfRungeKutta4(f, tGrid[0], tau, U0, y1);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(y1[i]);
+    }
+    std::vector<Type> y2;
+    iterationOfRungeKutta4(f, tGrid[1], tau, y1, y2);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(y2[i]);
+    }
+    std::vector<Type> y3;
+    iterationOfRungeKutta4(f, tGrid[2], tau, y2, y3);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(y3[i]);
+    }    
+    std::vector<Type> y(n);
+    // Итерации метода Предсказание - коррекция
+    std::vector<Type> fVec(n);
+    for (std::size_t k = 3; k < numOfTimeInterv; k++){
+        y = y3 + (tau / 24.0) * (55.0 * f(tGrid[k], y3) - 59.0 * f(tGrid[k - 1], y2) + 37.0 * f(tGrid[k - 2], y1) - 9.0 * f(tGrid[k - 3], y0));
+        for (std::size_t i = 0; i < n; i++){
+            fVec[i] = f(tGrid[k + 1], y)[i];
+        }
+        y = y3 + (tau / 24.0) * (9.0 * fVec + 19.0 * f(tGrid[k], y3) - 5.0 * f(tGrid[k - 1], y2) + f(tGrid[k - 2], y1));
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(y[i]);
+        }
         for (std::size_t i = 0; i < n; i++){
             y0[i] = y1[i];
             y1[i] = y2[i];
