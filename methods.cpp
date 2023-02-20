@@ -2854,7 +2854,7 @@ template<typename Type>
 std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){ // Добавил точность и возможность автошага
     std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    const Type startTau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Начальный шаг
     std::size_t n = U0.size();
     solution.resize(n);
     for (std::size_t i = 0; i < n; i++){
@@ -2863,52 +2863,72 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     for (std::size_t i = 0; i < n; i++){
         solution[i].push_back(U0[i]);
     }
-    std::vector<Type> yPrev; // предыдущий y
+    std::vector<Type> tempY; // текущий y
     for (std::size_t i = 0; i < n; i++){
-        yPrev.push_back(U0[i]);
+        tempY.push_back(U0[i]);
     }
-    std::vector<Type> y(n); // Основной y
+    std::vector<Type> y(n); // Искомый y
     std::vector<Type> y2(n); // y для сравнения решений при уменьшении шага в 2 раза
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
     std::vector<Type> shiftY(n);
+    std::size_t numOfChanges = 0; // Количесвто изменений сетки относительно начальной
+    Type tau = startTau; // Текущий шаг
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        for (std::size_t i = 0; i < n; i++){
-            k1[i] = f(tGrid[k], yPrev)[i];
-        }
-        for (std::size_t i = 0; i < n; i++){
-            for (std::size_t j = 0; j < n; j++){
-                shiftY[j] = yPrev[j] + (tau / 2.0) * k1[j];
+        Type tempT = tGrid[k];
+        // Текущий шаг
+        std::size_t it = 0;
+        do{
+            for (std::size_t i = 0; i < n; i++){
+                k1[i] = f(tempT, tempY)[i];
             }
-            k2[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
-        }
-        y = yPrev + tau * k2;
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + (tau / 2.0) * k1[j];
+                }
+                k2[i] = f(tempT + tau / 2.0, shiftY)[i];
+            }
+            y = tempY + tau * k2; 
+            tempT += tau;
+            it++;
+        } while (it < std::pow(2.0, numOfChanges));
+        // Уменьшенный шаг
         if  (autoStep){
             Type diffYNorm = 0.0; // Норма разности между векторами
-            std::size_t numOfStepDecr = 1; // Количество делений шага
-            Type tempT = tGrid[k];
-            y2 = yPrev;
+            Type tempTau = tau / 2.0; // Уменьшенный текущий шаг
             do{
-                tau /= 2.0; // Уменьшение шага в 2 раза
-                for (std::size_t i = 0; i < 2 * numOfStepDecr; i++){
-                    for (std::size_t i = 0; i < n; i++){
-                        k1[i] = f(tempT + tau, yPrev)[i];
+                y2 = tempY; 
+                tempT = tGrid[k];
+                numOfChanges++;
+                it = 0;
+                do{
+                   for (std::size_t i = 0; i < n; i++){
+                        k1[i] = f(tempT, y2)[i];
                     }
                     for (std::size_t i = 0; i < n; i++){
                         for (std::size_t j = 0; j < n; j++){
-                            shiftY[j] = yPrev[j] + (tau / 2.0) * k1[j];
+                            shiftY[j] = y2[j] + (tempTau / 2.0) * k1[j];
                         }
-                        k2[i] = f(tempT + tau / 2.0, shiftY)[i];
+                        k2[i] = f(tempT + tempTau / 2.0, shiftY)[i];
                     }
-                    y2 = y2 + tau * k2;
-                    tempT += tau;
+                    y2 = y2 + tempTau * k2;
+                    tempT += tempTau; 
+                    it++;
+                } while (it < std::pow(2.0, numOfChanges));
+                diffYNorm = normOfVector((y2 - y), 2.0) / 3.0;
+                y = y2;
+                if (diffYNorm < eps){
+                    break;
+                }else{
+                    tempTau /= 2.0;
                 }
-                diffYNorm = normInfOfVector(y2 - y, 2.0) / 3.0;
-            } while (diffYNorm > eps);
-            if (diffYNorm <= lowEps){
-                tau *= 2.0;
-            }
-            y = y2;
+                if (diffYNorm <= lowEps && tempTau < startTau){
+                    tempTau *= 2.0;
+                    numOfChanges--;
+                }
+            } while (true);
+            tau = tempTau;
+            tempY = y;
         }
         for (std::size_t i = 0; i < n; i++){
             solution[i].push_back(y[i]);
