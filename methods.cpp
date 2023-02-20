@@ -2852,7 +2852,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
 // 2 - х шаговый метод Рунге - Кутты 
 template<typename Type>
 std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution){
+std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){ // Добавил точность и возможность автошага
     std::vector<Type> tGrid;
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::size_t n = U0.size();
@@ -2863,24 +2863,53 @@ std::vector<std::vector<Type>> &solution){
     for (std::size_t i = 0; i < n; i++){
         solution[i].push_back(U0[i]);
     }
-    std::vector<Type> y;
+    std::vector<Type> yPrev; // предыдущий y
     for (std::size_t i = 0; i < n; i++){
-        y.push_back(U0[i]);
+        yPrev.push_back(U0[i]);
     }
+    std::vector<Type> y(n); // Основной y
+    std::vector<Type> y2(n); // y для сравнения решений при уменьшении шага в 2 раза
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
     std::vector<Type> shiftY(n);
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
         for (std::size_t i = 0; i < n; i++){
-            k1[i] = f(tGrid[k], y)[i];
+            k1[i] = f(tGrid[k], yPrev)[i];
         }
         for (std::size_t i = 0; i < n; i++){
             for (std::size_t j = 0; j < n; j++){
-                shiftY[j] = y[j] + (tau / 2.0) * k1[j];
+                shiftY[j] = yPrev[j] + (tau / 2.0) * k1[j];
             }
             k2[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
         }
-        y = y + tau * k2;
+        y = yPrev + tau * k2;
+        if  (autoStep){
+            Type diffYNorm = 0.0; // Норма разности между векторами
+            std::size_t numOfStepDecr = 1; // Количество делений шага
+            Type tempT = tGrid[k];
+            y2 = yPrev;
+            do{
+                tau /= 2.0; // Уменьшение шага в 2 раза
+                for (std::size_t i = 0; i < 2 * numOfStepDecr; i++){
+                    for (std::size_t i = 0; i < n; i++){
+                        k1[i] = f(tempT + tau, yPrev)[i];
+                    }
+                    for (std::size_t i = 0; i < n; i++){
+                        for (std::size_t j = 0; j < n; j++){
+                            shiftY[j] = yPrev[j] + (tau / 2.0) * k1[j];
+                        }
+                        k2[i] = f(tempT + tau / 2.0, shiftY)[i];
+                    }
+                    y2 = y2 + tau * k2;
+                    tempT += tau;
+                }
+                diffYNorm = normInfOfVector(y2 - y, 2.0) / 3.0;
+            } while (diffYNorm > eps);
+            if (diffYNorm <= lowEps){
+                tau *= 2.0;
+            }
+            y = y2;
+        }
         for (std::size_t i = 0; i < n; i++){
             solution[i].push_back(y[i]);
         }
