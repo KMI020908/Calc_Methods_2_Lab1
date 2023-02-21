@@ -172,12 +172,31 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     writeMatrixFile(dataMatrix, PHASE_PC_FILE_PATH);
 }
 
+// Анализ методов Рунге-Кутты с автоматическим шагом
+template<typename Type>
+void RungeKuttaStepAnalys(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+const std::string &SA_RG_2_FILE_PATH, const std::string &SA_RG_4_FILE_PATH, Type eps = 1e-6, Type lowEps = 1e-8){
+    std::size_t n = U0.size(); // Размерность задачи
+    std::vector<double> tGrid; // Временная сетка
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Шаг сетки
+    std::vector<Type> dataVec = {t0, T, tau};
+    std::vector<std::vector<double>> dataMatrix; // Матрица решений
+
+    RungeKuttaMethodStepAnalys2(f, t0, T, U0, numOfTimeInterv, dataMatrix, eps, lowEps); // Анализ Рунге-Кутты 2-ого порядка
+    writeMatrixFile(dataMatrix, SA_RG_2_FILE_PATH);
+
+    RungeKuttaMethodStepAnalys4(f, t0, T, U0, numOfTimeInterv, dataMatrix, eps, lowEps); // Анализ Рунге-Кутты 4-ого порядка
+    writeMatrixFile(dataMatrix, SA_RG_4_FILE_PATH);
+}
+
 template<typename Type>
 void temp_main(){
     Type t0 = 0.0;
-    Type T = 100.0;
+    //Type T = 100.0;
+    Type T = 6.0;
     std::vector<Type> U0 = {1.0, 0.0};
-    std::size_t numOfTimeIntervals = 200;
+    //std::size_t numOfTimeIntervals = 200;
+    std::size_t numOfTimeIntervals = 6;
     Type h = 1e-4;
     Type eps = 1e-6;
     bool autoStep = true;
@@ -188,6 +207,7 @@ void temp_main(){
     checkTestAdams(sys1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_1, PC_AD_FILE_PATH_1);
     checkSpeedEst(sys1, realSolution1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
     SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1, SPEED_AD_4_FILE_PATH_1, SPEED_PC_FILE_PATH_1, h, eps, iterParam);
+    RungeKuttaStepAnalys(sys1, t0, T, U0, numOfTimeIntervals, SA_RG_2_FILE_PATH_1, SA_RG_4_FILE_PATH_1, eps, lowEps);
     Type L = 20.0;
     std::size_t N = 4;
     //checkPhaseTraces(sys1, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_1, PHASE_BW_E_FILE_PATH_1, 
@@ -208,6 +228,7 @@ void temp_main(){
     checkTestAdams(sysVar1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_2, PC_AD_FILE_PATH_2);
     //checkSpeedEst(sysVar1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
     //SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, SPEED_AD_4_FILE_PATH_2, SPEED_PC_FILE_PATH_2, h, eps, iterParam);
+    //RungeKuttaStepAnalys(sysVar1, t0, T, U0, numOfTimeIntervals, SA_RG_2_FILE_PATH_2, SA_RG_4_FILE_PATH_2, eps, lowEps);
     L = 20.0;
     N = 4;
     //checkPhaseTraces(sysVar1, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_2, PHASE_BW_E_FILE_PATH_2, 
@@ -228,6 +249,7 @@ void temp_main(){
     checkTestAdams(sysVar9, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_3, PC_AD_FILE_PATH_3);
     //checkSpeedEst(sysVar9, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_3, SPEED_BW_E_FILE_PATH_3, SPEED_SYM_E_FILE_PATH_3,
     //SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, SPEED_AD_4_FILE_PATH_3, SPEED_PC_FILE_PATH_3, h, eps, iterParam);
+    RungeKuttaStepAnalys(sysVar9, t0, T, U0, numOfTimeIntervals, SA_RG_2_FILE_PATH_3, SA_RG_4_FILE_PATH_3, eps, lowEps);
     L = 20.0;
     N = 4;
     //checkPhaseTraces(sysVar9, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_3, PHASE_BW_E_FILE_PATH_3, 
@@ -237,25 +259,5 @@ void temp_main(){
 
 int main(){
     temp_main<double>();
-
-    /*
-    std::vector<double> xGrid;
-    getUniformGrid(0.0, 1.0, 2, xGrid);
-    std::cout << xGrid << '\n';
-
-    std::vector<std::vector<double>> solution;
-    double t0 = 0.0;
-    double T = 2.0 * M_PI;
-    std::vector<double> U0 = {1.0, 0.0};
-    std::size_t numOfTimeInt = 6;
-    forwardEulerMethod(func1, t0, T, U0, numOfTimeInt, solution);
-    std::vector<double> tGrid;
-    getUniformGrid(t0, T, numOfTimeInt, tGrid);
-    std::cout << tGrid << '\n' << '\n';
-    std::cout << solution[0] << '\n' << '\n';
-    std::cout << solution[1] << '\n' << '\n';
-    */
-
-
     return 0;
 }

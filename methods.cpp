@@ -3440,3 +3440,235 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
     }
     return tau;
 }
+
+// Функция получения информации о работе автоматического шага для метода Рунге-Кутты 2-ого порядка
+template<typename Type>
+std::size_t RungeKuttaMethodStepAnalys2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &dataMatrix, Type eps, Type lowEps){
+    for (std::size_t i = 0; i < dataMatrix.size(); i++){
+        dataMatrix[i].clear();
+    }
+    dataMatrix.clear();
+    std::vector<Type> tGrid;
+    const Type startTau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Начальный шаг
+    dataMatrix.push_back(tGrid);
+    std::vector<Type> errVec(numOfTimeInterv); // Вектор точности в k-ый момент времени
+    std::vector<Type> tauVec(numOfTimeInterv); // Вектор шага в k-ый момент времени
+    std::vector<Type> reduceTauVec(numOfTimeInterv); // Вектор уменьшения шага в k-ый момент времени
+    std::vector<Type> increaseTauVec(numOfTimeInterv); // Вектор увеличения шага в k-ый момент времени
+
+    std::size_t n = U0.size();
+
+    std::vector<Type> tempY; // Текущий y
+    for (std::size_t i = 0; i < n; i++){
+        tempY.push_back(U0[i]);
+    }
+    std::vector<Type> nextY(n); // Следующий y
+    std::vector<Type> halfY(n); // y при уменьшении шага в 2 раза
+
+    std::vector<Type> k1(n);
+    std::vector<Type> k2(n);
+    std::vector<Type> shiftY(n);
+
+    Type tau = startTau; // Текущий шаг
+    std::size_t numOfChanges = 0; // Количество изменений начального шага
+    std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
+    for (std::size_t k = 0; k < numOfTimeInterv; k++){
+        Type numOfReduce = 0;
+        Type numOfIncrease = 0;
+        Type tempT = tGrid[k];
+        tauVec[k] = tau;
+        
+        numOfIntervals = std::pow(2.0, numOfChanges);
+
+        // Текущий шаг
+        for (std::size_t m = 0; m < numOfIntervals; m++){
+            for (std::size_t i = 0; i < n; i++){
+                k1[i] = f(tempT, tempY)[i];
+            }
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + (tau / 2.0) * k1[j];
+                }
+                k2[i] = f(tempT + tau / 2.0, shiftY)[i];
+            }
+            nextY = tempY + tau * k2; 
+            tempT += tau;
+        }
+
+        // Уменьшенный шаг
+        Type diffYNorm = 0.0; // Норма разности между векторами
+        Type halfTau = 0.0; // Уменьшенный текущий шаг
+        do{
+            halfTau = tau / 2.0;
+            halfY = tempY; 
+            tempT = tGrid[k];
+            for (std::size_t m = 0; m < 2.0 * numOfIntervals; m++){
+                for (std::size_t i = 0; i < n; i++){
+                    k1[i] = f(tempT, halfY)[i];
+                }
+                for (std::size_t i = 0; i < n; i++){
+                    for (std::size_t j = 0; j < n; j++){
+                        shiftY[j] = halfY[j] + (halfTau / 2.0) * k1[j];
+                    }
+                    k2[i] = f(tempT + halfTau / 2.0, shiftY)[i];
+                }
+                halfY = halfY + halfTau * k2;
+                tempT += halfTau;
+            }
+            diffYNorm = normOfVector((halfY - nextY), 2.0) / 3.0;
+            nextY = halfY;
+            if (diffYNorm < eps){
+                break;
+            }else{
+                tau /= 2.0;
+                numOfChanges++;
+                numOfReduce += 1;
+                numOfIntervals = std::pow(2.0, numOfChanges);
+            }
+        } while (true);
+        if (diffYNorm <= lowEps && tau < startTau){
+            tau *= 2.0;
+            numOfChanges--;
+            numOfIncrease += 1;
+        }
+        tempY = nextY;
+        errVec[k] = diffYNorm;
+        reduceTauVec[k] = numOfReduce;
+        increaseTauVec[k] = numOfIncrease;
+    }
+    dataMatrix.push_back(tauVec);
+    dataMatrix.push_back(errVec);
+    dataMatrix.push_back(reduceTauVec);
+    dataMatrix.push_back(increaseTauVec);
+    return numOfChanges;
+}
+
+// Функция получения информации о работе автоматического шага для метода Рунге-Кутты 4-ого порядка
+template<typename Type>
+std::size_t RungeKuttaMethodStepAnalys4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &dataMatrix, Type eps, Type lowEps){
+    for (std::size_t i = 0; i < dataMatrix.size(); i++){
+        dataMatrix[i].clear();
+    }
+    dataMatrix.clear();
+    std::vector<Type> tGrid;
+    const Type startTau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Начальный шаг
+    dataMatrix.push_back(tGrid);
+    std::vector<Type> errVec(numOfTimeInterv); // Вектор точности в k-ый момент времени
+    std::vector<Type> tauVec(numOfTimeInterv); // Вектор шага в k-ый момент времени
+    std::vector<Type> reduceTauVec(numOfTimeInterv); // Вектор уменьшения шага в k-ый момент времени
+    std::vector<Type> increaseTauVec(numOfTimeInterv); // Вектор увеличения шага в k-ый момент времени
+
+    std::size_t n = U0.size();
+
+    std::vector<Type> tempY; // Текущий y
+    for (std::size_t i = 0; i < n; i++){
+        tempY.push_back(U0[i]);
+    }
+    std::vector<Type> nextY(n); // Следующий y
+    std::vector<Type> halfY(n); // y при уменьшении шага в 2 раза
+
+    std::vector<Type> k1(n);
+    std::vector<Type> k2(n);
+    std::vector<Type> k3(n);
+    std::vector<Type> k4(n);
+    std::vector<Type> shiftY(n);
+
+    Type tau = startTau; // Текущий шаг
+    std::size_t numOfChanges = 0; // Количество изменений начального шага
+    std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
+    for (std::size_t k = 0; k < numOfTimeInterv; k++){
+        Type numOfReduce = 0;
+        Type numOfIncrease = 0;
+        Type tempT = tGrid[k];
+        tauVec[k] = tau;
+
+        numOfIntervals = std::pow(2.0, numOfChanges);
+
+        // Текущий шаг
+        for (std::size_t m = 0; m < numOfIntervals; m++){
+            for (std::size_t i = 0; i < n; i++){
+                k1[i] = f(tempT, tempY)[i];
+            }
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + (tau / 2.0) * k1[j];
+                }
+                k2[i] = f(tempT + tau / 2.0, shiftY)[i];
+            }
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + (tau / 2.0) * k2[j];
+                }
+                k3[i] = f(tempT + tau / 2.0, shiftY)[i];
+            }
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + tau * k3[j];
+                }
+                k4[i] = f(tempT + tau, shiftY)[i];
+            }
+            nextY = tempY + (tau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+            tempT += tau;
+        }
+
+        // Уменьшенный шаг
+        Type diffYNorm = 0.0; // Норма разности между векторами
+        Type halfTau = 0.0; // Уменьшенный текущий шаг
+        do{
+            halfTau = tau / 2.0;
+            halfY = tempY; 
+            tempT = tGrid[k];
+            for (std::size_t m = 0; m < 2.0 * numOfIntervals; m++){
+                for (std::size_t i = 0; i < n; i++){
+                    k1[i] = f(tempT, halfY)[i];
+                }
+                for (std::size_t i = 0; i < n; i++){
+                    for (std::size_t j = 0; j < n; j++){
+                        shiftY[j] = halfY[j] + (halfTau / 2.0) * k1[j];
+                    }
+                    k2[i] = f(tempT + halfTau / 2.0, shiftY)[i];
+                }
+                for (std::size_t i = 0; i < n; i++){
+                    for (std::size_t j = 0; j < n; j++){
+                        shiftY[j] = halfY[j] + (halfTau / 2.0) * k2[j];
+                    }
+                    k3[i] = f(tempT + halfTau / 2.0, shiftY)[i];
+                }
+                for (std::size_t i = 0; i < n; i++){
+                    for (std::size_t j = 0; j < n; j++){
+                        shiftY[j] = halfY[j] + halfTau * k3[j];
+                    }
+                    k4[i] = f(tempT + halfTau, shiftY)[i];
+                }
+                halfY = halfY + (halfTau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+                tempT += halfTau;
+            }
+            diffYNorm = normOfVector((halfY - nextY), 2.0) / 15.0;
+            nextY = halfY;
+            if (diffYNorm < eps){
+                break;
+            }else{
+                tau /= 2.0;
+                numOfChanges++;
+                numOfReduce += 1;
+                numOfIntervals = std::pow(2.0, numOfChanges);
+            }
+        } while (true);
+        if (diffYNorm <= lowEps && tau < startTau){
+            tau *= 2.0;
+            numOfChanges--;
+            numOfIncrease += 1;
+        }
+        tempY = nextY;
+        errVec[k] = diffYNorm;
+        reduceTauVec[k] = numOfReduce;
+        increaseTauVec[k] = numOfIncrease;
+    }
+    dataMatrix.push_back(tauVec);
+    dataMatrix.push_back(errVec);
+    dataMatrix.push_back(reduceTauVec);
+    dataMatrix.push_back(increaseTauVec);
+    return numOfChanges;
+}
