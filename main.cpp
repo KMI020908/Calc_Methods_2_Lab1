@@ -177,7 +177,7 @@ void temp_main(){
     Type t0 = 0.0;
     Type T = 10.0;
     std::vector<Type> U0 = {1.0, 0.0};
-    std::size_t numOfTimeIntervals = 50;
+    std::size_t numOfTimeIntervals = 10;
     Type h = 1e-4;
     Type eps = 1e-6;
     std::size_t iterParam = 1;

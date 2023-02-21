@@ -2873,8 +2873,8 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     std::vector<Type> k2(n);
     std::vector<Type> shiftY(n);
     Type tau = startTau; // Текущий шаг
+    std::size_t numOfChanges = 0;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        std::size_t numOfChanges = 0; // Количесвто изменений сетки относительно начальной
         Type tempT = tGrid[k];
         // Текущий шаг
         std::size_t it = 0;
@@ -2899,7 +2899,6 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
             do{
                 y2 = tempY; 
                 tempT = tGrid[k];
-                numOfChanges++;
                 it = 0;
                 do{
                    for (std::size_t i = 0; i < n; i++){
@@ -2914,17 +2913,19 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                     y2 = y2 + tempTau * k2;
                     tempT += tempTau; 
                     it++;
-                } while (it < std::pow(2.0, numOfChanges));
+                } while (it < std::pow(2.0, numOfChanges + 1));
                 diffYNorm = normOfVector((y2 - y), 2.0) / 3.0;
                 y = y2;
+                if (diffYNorm <= lowEps && tempTau < startTau){
+                    tau *= 2.0;
+                    numOfChanges--;
+                }
                 if (diffYNorm < eps){
                     break;
                 }else{
+                    tau /= 2.0;
+                    numOfChanges++;
                     tempTau /= 2.0;
-                }
-                if (diffYNorm <= lowEps && tempTau < startTau){
-                    tempTau *= 2.0;
-                    numOfChanges--;
                 }
             } while (true);
             tempY = y;
