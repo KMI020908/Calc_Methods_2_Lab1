@@ -2692,33 +2692,6 @@ Type getUniformGrid(Type a, Type b, std::size_t numOfFinElems, std::vector<Type>
     return h;
 }
 
-// Явный метод Эйлера
-template<typename Type>
-std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution){
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
-    std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
-        solution[i].clear();
-    }
-    for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
-    }
-    std::vector<Type> y;
-    for (std::size_t i = 0; i < n; i++){
-        y.push_back(U0[i]);
-    }
-    for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        y = y + tau * f(tGrid[k], y);
-        for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
-        }
-    }
-    return n;
-}
-
 // Дифференцирование фнп
 template<typename Type>
 Type partialDiff(Type (*f)(Type t, std::vector<Type>& x), std::size_t varPosition, Type t, const std::vector<Type> &x, Type h){
@@ -2757,6 +2730,33 @@ Type partialDiff(std::vector<Type>(*fSys)(Type t, const std::vector<Type> &x), s
     Type rightShift = fSys(t, tempVec)[eqPosition];
     Type diff = (rightShift - leftShift) / (2.0 * h);
     return diff;
+}
+
+// Явный метод Эйлера
+template<typename Type>
+std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
+std::vector<std::vector<Type>> &solution){
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    std::size_t n = U0.size();
+    solution.resize(n);
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].clear();
+    }
+    for (std::size_t i = 0; i < n; i++){
+        solution[i].push_back(U0[i]);
+    }
+    std::vector<Type> y;
+    for (std::size_t i = 0; i < n; i++){
+        y.push_back(U0[i]);
+    }
+    for (std::size_t k = 0; k < numOfTimeInterv; k++){
+        y = y + tau * f(tGrid[k], y);
+        for (std::size_t i = 0; i < n; i++){
+            solution[i].push_back(y[i]);
+        }
+    }
+    return n;
 }
 
 // Неявный метод Эйлера
@@ -2872,9 +2872,9 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
     std::vector<Type> shiftY(n);
-    std::size_t numOfChanges = 0; // Количесвто изменений сетки относительно начальной
     Type tau = startTau; // Текущий шаг
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
+        std::size_t numOfChanges = 0; // Количесвто изменений сетки относительно начальной
         Type tempT = tGrid[k];
         // Текущий шаг
         std::size_t it = 0;
@@ -2927,7 +2927,6 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                     numOfChanges--;
                 }
             } while (true);
-            tau = tempTau;
             tempY = y;
         }
         for (std::size_t i = 0; i < n; i++){
@@ -2988,247 +2987,6 @@ std::vector<std::vector<Type>> &solution){
         }
     }
     return n;
-}
-
-// Оценка скорости сходимости для разных методов при известном аналитическом решении
-template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
-DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
-    speedResult.clear();
-    std::size_t n = numOfTimeInterv + 1;
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
-    std::vector<std::vector<Type>> solution;
-    switch (flag){
-        case FW_EULER:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-            break;
-        case BW_EULER:
-            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case SYM_SCHEME:
-            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_AD:
-            AdamsMethod(f, t0, T, U0, n, solution);
-            break;
-        case PREDICT_CORRECT:
-            predicCorrect(f, t0, T, U0, n, solution);
-            break;
-        default:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-    }
-    std::vector<Type> f1;
-    for (std::size_t k = 0; k < n; k++){
-        f1.push_back(solution[0][k]);
-    }
-    n = 2 * numOfTimeInterv;
-    switch (flag){
-        case FW_EULER:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-            break;
-        case BW_EULER:
-            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case SYM_SCHEME:
-            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_AD:
-            AdamsMethod(f, t0, T, U0, n, solution);
-            break;
-        case PREDICT_CORRECT:
-            predicCorrect(f, t0, T, U0, n, solution);
-            break;
-        default:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-    }
-    std::vector<Type> f2;
-    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        f2.push_back(solution[0][2 * k]);
-    }
-    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        speedResult.push_back(log2(std::abs((f1[k] - realSolution(tGrid[k])) / (f2[k] - realSolution(tGrid[k])))));
-    }
-    return tau;
-}
-
-// Оценка скорости сходимости для разных методов при неизвестном аналитическом решении
-template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
-DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
-    speedResult.clear();
-    std::size_t n = numOfTimeInterv + 1;
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
-    std::vector<std::vector<Type>> solution;
-    switch (flag){
-        case FW_EULER:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-            break;
-        case BW_EULER:
-            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case SYM_SCHEME:
-            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_AD:
-            AdamsMethod(f, t0, T, U0, n, solution);
-            break;
-        case PREDICT_CORRECT:
-            predicCorrect(f, t0, T, U0, n, solution);
-            break;
-        default:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-    }
-    std::vector<Type> f1;
-    for (std::size_t k = 0; k < n; k++){
-        f1.push_back(solution[0][k]);
-    }
-    n = 2 * numOfTimeInterv;
-    switch (flag){
-        case FW_EULER:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-            break;
-        case BW_EULER:
-            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case SYM_SCHEME:
-            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_AD:
-            AdamsMethod(f, t0, T, U0, n, solution);
-            break;
-        case PREDICT_CORRECT:
-            predicCorrect(f, t0, T, U0, n, solution);
-            break;
-        default:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-    }
-    std::vector<Type> f2;
-    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        f2.push_back(solution[0][2 * k]);
-    }
-    n = 4 * numOfTimeInterv;
-    switch (flag){
-        case FW_EULER:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-            break;
-        case BW_EULER:
-            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case SYM_SCHEME:
-            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
-            break;
-        case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
-            break;
-        case FOURTH_AD:
-            AdamsMethod(f, t0, T, U0, n, solution);
-            break;
-        case PREDICT_CORRECT:
-            predicCorrect(f, t0, T, U0, n, solution);
-            break;
-        default:
-            forwardEulerMethod(f, t0, T, U0, n, solution);
-    }
-    std::vector<Type> f3;
-    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        f3.push_back(solution[0][4 * k]);
-    }
-    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        speedResult.push_back(log2(std::abs((f1[k] - f2[k]) / (f2[k] - f3[k]))));
-    }
-    return tau;
-}
-
-// Фазовая плоскость
-template<typename Type>
-std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
-DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &dataMatrix, Type h, Type eps, std::size_t iterParam){
-    for (std::size_t i = 0; i < dataMatrix.size(); i++){
-        dataMatrix[i].clear();
-    }
-    dataMatrix.clear();
-    std::vector<Type> sqGrid;
-    Type sqareStep = L / (N - 1);
-    for (std::size_t i = 0; i < N; i++){
-        sqGrid.push_back(-L + i * 2.0 * sqareStep);
-    }
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
-    dataMatrix.push_back(tGrid);
-    std::vector<Type> dataVec(2 + 2 * (numOfTimeInterv + 1));
-    std::vector<std::vector<Type>> solution;
-    std::size_t sqSize = sqGrid.size();
-    std::vector<Type> U0(2);
-    for (std::size_t i = 0; i < sqSize; i++){
-        for (std::size_t j = 0; j < sqSize; j++){
-            dataVec[0] = sqGrid[i];
-            dataVec[1] = sqGrid[j];
-            U0[0] = sqGrid[i];
-            U0[1] = sqGrid[j];
-            switch (flag){
-                case FW_EULER:
-                    forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
-                    break;
-                case BW_EULER:
-                    backwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam);
-                    break;
-                case SYM_SCHEME:
-                    symmetricScheme(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam);
-                    break;
-                case TWICE_RG:
-                    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution);
-                    break;
-                case FOURTH_RG:
-                    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution);
-                    break;
-                case FOURTH_AD:
-                    AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution);
-                    break;
-                case PREDICT_CORRECT:
-                    predicCorrect(f, t0, T, U0, numOfTimeInterv, solution);
-                    break;
-                default:
-                    forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
-            }
-            for (std::size_t k = 2; k < numOfTimeInterv + 3; k++){
-                dataVec[k] = solution[0][k - 2];
-            }
-            for (std::size_t k = numOfTimeInterv + 3; k < 2 * numOfTimeInterv + 4; k++){
-                dataVec[k] = solution[1][k - numOfTimeInterv - 3];
-            }
-            dataMatrix.push_back(dataVec);
-        }
-    }
-    return solution.size();
 }
 
 template<typename Type>
@@ -3370,4 +3128,245 @@ std::vector<std::vector<Type>> &solution){
         }
     }
     return n;
+}
+
+// Фазовая плоскость
+template<typename Type>
+std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
+DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &dataMatrix, Type h, Type eps, std::size_t iterParam){
+    for (std::size_t i = 0; i < dataMatrix.size(); i++){
+        dataMatrix[i].clear();
+    }
+    dataMatrix.clear();
+    std::vector<Type> sqGrid;
+    Type sqareStep = L / (N - 1);
+    for (std::size_t i = 0; i < N; i++){
+        sqGrid.push_back(-L + i * 2.0 * sqareStep);
+    }
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    dataMatrix.push_back(tGrid);
+    std::vector<Type> dataVec(2 + 2 * (numOfTimeInterv + 1));
+    std::vector<std::vector<Type>> solution;
+    std::size_t sqSize = sqGrid.size();
+    std::vector<Type> U0(2);
+    for (std::size_t i = 0; i < sqSize; i++){
+        for (std::size_t j = 0; j < sqSize; j++){
+            dataVec[0] = sqGrid[i];
+            dataVec[1] = sqGrid[j];
+            U0[0] = sqGrid[i];
+            U0[1] = sqGrid[j];
+            switch (flag){
+                case FW_EULER:
+                    forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
+                case BW_EULER:
+                    backwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam);
+                    break;
+                case SYM_SCHEME:
+                    symmetricScheme(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam);
+                    break;
+                case TWICE_RG:
+                    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
+                case FOURTH_RG:
+                    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
+                case FOURTH_AD:
+                    AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
+                case PREDICT_CORRECT:
+                    predicCorrect(f, t0, T, U0, numOfTimeInterv, solution);
+                    break;
+                default:
+                    forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
+            }
+            for (std::size_t k = 2; k < numOfTimeInterv + 3; k++){
+                dataVec[k] = solution[0][k - 2];
+            }
+            for (std::size_t k = numOfTimeInterv + 3; k < 2 * numOfTimeInterv + 4; k++){
+                dataVec[k] = solution[1][k - numOfTimeInterv - 3];
+            }
+            dataMatrix.push_back(dataVec);
+        }
+    }
+    return solution.size();
+}
+
+// Оценка скорости сходимости для разных методов при неизвестном аналитическом решении
+template<typename Type>
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
+    speedResult.clear();
+    std::size_t n = numOfTimeInterv + 1;
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
+    std::vector<std::vector<Type>> solution;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f1;
+    for (std::size_t k = 0; k < n; k++){
+        f1.push_back(solution[0][k]);
+    }
+    n = 2 * numOfTimeInterv;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f2;
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        f2.push_back(solution[0][2 * k]);
+    }
+    n = 4 * numOfTimeInterv;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f3;
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        f3.push_back(solution[0][4 * k]);
+    }
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        speedResult.push_back(log2(std::abs((f1[k] - f2[k]) / (f2[k] - f3[k]))));
+    }
+    return tau;
+}
+
+// Оценка скорости сходимости для разных методов при известном аналитическом решении
+template<typename Type>
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
+    speedResult.clear();
+    std::size_t n = numOfTimeInterv + 1;
+    std::vector<Type> tGrid;
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
+    std::vector<std::vector<Type>> solution;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f1;
+    for (std::size_t k = 0; k < n; k++){
+        f1.push_back(solution[0][k]);
+    }
+    n = 2 * numOfTimeInterv;
+    switch (flag){
+        case FW_EULER:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+            break;
+        case BW_EULER:
+            backwardEulerMethod(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case SYM_SCHEME:
+            symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
+            break;
+        case TWICE_RG:
+            RungeKuttaMethod2(f, t0, T, U0, n, solution, false);
+            break;
+        case FOURTH_RG:
+            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            break;
+        case FOURTH_AD:
+            AdamsMethod(f, t0, T, U0, n, solution);
+            break;
+        case PREDICT_CORRECT:
+            predicCorrect(f, t0, T, U0, n, solution);
+            break;
+        default:
+            forwardEulerMethod(f, t0, T, U0, n, solution);
+    }
+    std::vector<Type> f2;
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        f2.push_back(solution[0][2 * k]);
+    }
+    for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
+        speedResult.push_back(log2(std::abs((f1[k] - realSolution(tGrid[k])) / (f2[k] - realSolution(tGrid[k])))));
+    }
+    return tau;
 }
