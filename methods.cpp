@@ -2852,7 +2852,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
 // 2 - х шаговый метод Рунге - Кутты 
 template<typename Type>
 std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){ // Добавил точность и возможность автошага
+std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     std::vector<Type> tGrid;
     const Type startTau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Начальный шаг
     std::size_t n = U0.size();
@@ -2863,22 +2863,23 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     for (std::size_t i = 0; i < n; i++){
         solution[i].push_back(U0[i]);
     }
-    std::vector<Type> tempY; // текущий y
+    std::vector<Type> tempY; // Текущий y
     for (std::size_t i = 0; i < n; i++){
         tempY.push_back(U0[i]);
     }
-    std::vector<Type> y(n); // Искомый y
-    std::vector<Type> y2(n); // y для сравнения решений при уменьшении шага в 2 раза
+    std::vector<Type> nextY(n); // Следующий y
+    std::vector<Type> halfY(n); // y при уменьшении шага в 2 раза
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
     std::vector<Type> shiftY(n);
     Type tau = startTau; // Текущий шаг
-    std::size_t numOfChanges = 0;
+    std::size_t numOfChanges = 0; // Количество изменений начального шага
+    std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
         Type tempT = tGrid[k];
+        numOfIntervals = std::pow(2.0, numOfChanges);
         // Текущий шаг
-        std::size_t it = 0;
-        do{
+        for (std::size_t m = 0; m < numOfIntervals; m++){
             for (std::size_t i = 0; i < n; i++){
                 k1[i] = f(tempT, tempY)[i];
             }
@@ -2888,53 +2889,51 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                 }
                 k2[i] = f(tempT + tau / 2.0, shiftY)[i];
             }
-            y = tempY + tau * k2; 
+            nextY = tempY + tau * k2; 
             tempT += tau;
-            it++;
-        } while (it < std::pow(2.0, numOfChanges));
+        }
         // Уменьшенный шаг
         if  (autoStep){
             Type diffYNorm = 0.0; // Норма разности между векторами
-            Type tempTau = tau / 2.0; // Уменьшенный текущий шаг
+            Type halfTau = 0.0; // Уменьшенный текущий шаг
             do{
-                y2 = tempY; 
+                halfTau = tau / 2.0;
+                halfY = tempY; 
                 tempT = tGrid[k];
-                it = 0;
-                do{
-                   for (std::size_t i = 0; i < n; i++){
-                        k1[i] = f(tempT, y2)[i];
+                for (std::size_t m = 0; m < 2.0 * numOfIntervals; m++){
+                    for (std::size_t i = 0; i < n; i++){
+                        k1[i] = f(tempT, halfY)[i];
                     }
                     for (std::size_t i = 0; i < n; i++){
                         for (std::size_t j = 0; j < n; j++){
-                            shiftY[j] = y2[j] + (tempTau / 2.0) * k1[j];
+                            shiftY[j] = halfY[j] + (halfTau / 2.0) * k1[j];
                         }
-                        k2[i] = f(tempT + tempTau / 2.0, shiftY)[i];
+                        k2[i] = f(tempT + halfTau / 2.0, shiftY)[i];
                     }
-                    y2 = y2 + tempTau * k2;
-                    tempT += tempTau; 
-                    it++;
-                } while (it < std::pow(2.0, numOfChanges + 1));
-                diffYNorm = normOfVector((y2 - y), 2.0) / 3.0;
-                y = y2;
-                if (diffYNorm <= lowEps && tempTau < startTau){
-                    tau *= 2.0;
-                    numOfChanges--;
+                    halfY = halfY + halfTau * k2;
+                    tempT += halfTau;
                 }
+                diffYNorm = normOfVector((halfY - nextY), 2.0) / 3.0;
+                nextY = halfY;
                 if (diffYNorm < eps){
                     break;
                 }else{
                     tau /= 2.0;
                     numOfChanges++;
-                    tempTau /= 2.0;
+                    numOfIntervals = std::pow(2.0, numOfChanges);
                 }
             } while (true);
-            tempY = y;
+            if (diffYNorm <= lowEps && halfTau < startTau){
+                tau *= 2.0;
+                numOfChanges--;
+            }
+            tempY = nextY;
         }
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
+            solution[i].push_back(nextY[i]);
         }
     }
-    return n;
+    return numOfChanges;
 }
 
 // 4 - х шаговый метод Рунге - Кутты 
