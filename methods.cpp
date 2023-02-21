@@ -2863,21 +2863,25 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     for (std::size_t i = 0; i < n; i++){
         solution[i].push_back(U0[i]);
     }
+
     std::vector<Type> tempY; // Текущий y
     for (std::size_t i = 0; i < n; i++){
         tempY.push_back(U0[i]);
     }
     std::vector<Type> nextY(n); // Следующий y
     std::vector<Type> halfY(n); // y при уменьшении шага в 2 раза
+
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
     std::vector<Type> shiftY(n);
+
     Type tau = startTau; // Текущий шаг
     std::size_t numOfChanges = 0; // Количество изменений начального шага
     std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
         Type tempT = tGrid[k];
         numOfIntervals = std::pow(2.0, numOfChanges);
+
         // Текущий шаг
         for (std::size_t m = 0; m < numOfIntervals; m++){
             for (std::size_t i = 0; i < n; i++){
@@ -2892,8 +2896,9 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
             nextY = tempY + tau * k2; 
             tempT += tau;
         }
+
         // Уменьшенный шаг
-        if  (autoStep){
+        if (autoStep){
             Type diffYNorm = 0.0; // Норма разности между векторами
             Type halfTau = 0.0; // Уменьшенный текущий шаг
             do{
@@ -2927,8 +2932,8 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                 tau *= 2.0;
                 numOfChanges--;
             }
-            tempY = nextY;
         }
+        tempY = nextY;
         for (std::size_t i = 0; i < n; i++){
             solution[i].push_back(nextY[i]);
         }
@@ -2939,9 +2944,9 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
 // 4 - х шаговый метод Рунге - Кутты 
 template<typename Type>
 std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution){
+std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
     std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
+    const Type startTau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Начальный шаг
     std::size_t n = U0.size();
     solution.resize(n);
     for (std::size_t i = 0; i < n; i++){
@@ -2950,43 +2955,108 @@ std::vector<std::vector<Type>> &solution){
     for (std::size_t i = 0; i < n; i++){
         solution[i].push_back(U0[i]);
     }
-    std::vector<Type> y;
+
+    std::vector<Type> tempY; // Текущий y
     for (std::size_t i = 0; i < n; i++){
-        y.push_back(U0[i]);
+        tempY.push_back(U0[i]);
     }
+    std::vector<Type> nextY(n); // Следующий y
+    std::vector<Type> halfY(n); // y при уменьшении шага в 2 раза
+
     std::vector<Type> k1(n);
     std::vector<Type> k2(n);
     std::vector<Type> k3(n);
     std::vector<Type> k4(n);
     std::vector<Type> shiftY(n);
+
+    Type tau = startTau; // Текущий шаг
+    std::size_t numOfChanges = 0; // Количество изменений начального шага
+    std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        for (std::size_t i = 0; i < n; i++){
-            k1[i] = f(tGrid[k], y)[i];
-        }
-        for (std::size_t i = 0; i < n; i++){
-            for (std::size_t j = 0; j < n; j++){
-                shiftY[j] = y[j] + (tau / 2.0) * k1[j];
+        Type tempT = tGrid[k];
+        numOfIntervals = std::pow(2.0, numOfChanges);
+
+        // Текущий шаг
+        for (std::size_t m = 0; m < numOfIntervals; m++){
+            for (std::size_t i = 0; i < n; i++){
+                k1[i] = f(tempT, tempY)[i];
             }
-            k2[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
-        }
-        for (std::size_t i = 0; i < n; i++){
-            for (std::size_t j = 0; j < n; j++){
-                shiftY[j] = y[j] + (tau / 2.0) * k2[j];
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + (tau / 2.0) * k1[j];
+                }
+                k2[i] = f(tempT + tau / 2.0, shiftY)[i];
             }
-            k3[i] = f(tGrid[k] + tau / 2.0, shiftY)[i];
-        }
-        for (std::size_t i = 0; i < n; i++){
-            for (std::size_t j = 0; j < n; j++){
-                shiftY[j] = y[j] + tau * k3[j];
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + (tau / 2.0) * k2[j];
+                }
+                k3[i] = f(tempT + tau / 2.0, shiftY)[i];
             }
-            k4[i] = f(tGrid[k] + tau, shiftY)[i];
+            for (std::size_t i = 0; i < n; i++){
+                for (std::size_t j = 0; j < n; j++){
+                    shiftY[j] = tempY[j] + tau * k3[j];
+                }
+                k4[i] = f(tempT + tau, shiftY)[i];
+            }
+            nextY = tempY + (tau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+            tempT += tau;
         }
-        y = y + (tau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+
+        // Уменьшенный шаг
+        if (autoStep){
+            Type diffYNorm = 0.0; // Норма разности между векторами
+            Type halfTau = 0.0; // Уменьшенный текущий шаг
+            do{
+                halfTau = tau / 2.0;
+                halfY = tempY; 
+                tempT = tGrid[k];
+                for (std::size_t m = 0; m < 2.0 * numOfIntervals; m++){
+                    for (std::size_t i = 0; i < n; i++){
+                        k1[i] = f(tempT, halfY)[i];
+                    }
+                    for (std::size_t i = 0; i < n; i++){
+                        for (std::size_t j = 0; j < n; j++){
+                            shiftY[j] = halfY[j] + (halfTau / 2.0) * k1[j];
+                        }
+                        k2[i] = f(tempT + halfTau / 2.0, shiftY)[i];
+                    }
+                    for (std::size_t i = 0; i < n; i++){
+                        for (std::size_t j = 0; j < n; j++){
+                            shiftY[j] = halfY[j] + (halfTau / 2.0) * k2[j];
+                        }
+                        k3[i] = f(tempT + halfTau / 2.0, shiftY)[i];
+                    }
+                    for (std::size_t i = 0; i < n; i++){
+                        for (std::size_t j = 0; j < n; j++){
+                            shiftY[j] = halfY[j] + halfTau * k3[j];
+                        }
+                        k4[i] = f(tempT + halfTau, shiftY)[i];
+                    }
+                    halfY = halfY + (halfTau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
+                    tempT += halfTau;
+                }
+                diffYNorm = normOfVector((halfY - nextY), 2.0) / 3.0;
+                nextY = halfY;
+                if (diffYNorm < eps){
+                    break;
+                }else{
+                    tau /= 2.0;
+                    numOfChanges++;
+                    numOfIntervals = std::pow(2.0, numOfChanges);
+                }
+            } while (true);
+            if (diffYNorm <= lowEps && halfTau < startTau){
+                tau *= 2.0;
+                numOfChanges--;
+            }
+        }
+        tempY = nextY;
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
+            solution[i].push_back(nextY[i]);
         }
     }
-    return n;
+    return numOfChanges;
 }
 
 template<typename Type>
@@ -3167,10 +3237,10 @@ DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &da
                     symmetricScheme(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam);
                     break;
                 case TWICE_RG:
-                    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution);
+                    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution, false);
                     break;
                 case FOURTH_RG:
-                    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution);
+                    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution, false);
                     break;
                 case FOURTH_AD:
                     AdamsMethod(f, t0, T, U0, numOfTimeInterv, solution);
@@ -3213,10 +3283,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
             break;
         case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod2(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
@@ -3243,10 +3313,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
             break;
         case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod2(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
@@ -3273,10 +3343,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
             break;
         case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod2(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
@@ -3317,10 +3387,10 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             symmetricScheme(f, t0, T, U0, n, solution, h, eps, iterParam);
             break;
         case TWICE_RG:
-            RungeKuttaMethod2(f, t0, T, U0, n, solution);
+            RungeKuttaMethod2(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);
@@ -3350,7 +3420,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
             RungeKuttaMethod2(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_RG:
-            RungeKuttaMethod4(f, t0, T, U0, n, solution);
+            RungeKuttaMethod4(f, t0, T, U0, n, solution, false);
             break;
         case FOURTH_AD:
             AdamsMethod(f, t0, T, U0, n, solution);

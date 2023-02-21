@@ -324,11 +324,11 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
 
 template<typename Type>
 std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution, bool autoStep = true, Type eps = 1e-4, Type lowEps = 1e-8);
+std::vector<std::vector<Type>> &solution, bool autoStep = true, Type eps = 1e-4, Type lowEps = 1e-6);
 
 template<typename Type>
 std::size_t RungeKuttaMethod4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-std::vector<std::vector<Type>> &solution);
+std::vector<std::vector<Type>> &solution, bool autoStep = true, Type eps = 1e-6, Type lowEps = 1e-8);
 
 template<typename Type>
 std::size_t iterationOfRungeKutta4(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t, Type tau,
