@@ -48,14 +48,14 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
 // Проверка методов Рунге-Кутты
 template<typename Type>
 void checkTestRungeKutta(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
-const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH){
+const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH, bool autoStep = true, Type eps = 1e-6, Type lowEps = 1e-8){
     std::size_t n = U0.size(); // Размерность задачи
     std::vector<double> tGrid; // Временная сетка
     Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Шаг сетки
     std::vector<Type> dataVec = {t0, T, tau};
     std::vector<std::vector<double>> solution; // Матрица решений
 
-    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution); // Метод Рунге-Кутты 2-ого порядка
+    RungeKuttaMethod2(f, t0, T, U0, numOfTimeInterv, solution, autoStep, eps, lowEps); // Метод Рунге-Кутты 2-ого порядка
     writeScalarFile(n, TW_RG_FILE_PATH);
     writeScalarFile(numOfTimeInterv, TW_RG_FILE_PATH, true);
     writeVectorFile(dataVec, TW_RG_FILE_PATH, true);
@@ -64,7 +64,7 @@ const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH){
         writeVectorFile(solution[i], TW_RG_FILE_PATH, true);
     }
 
-    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution); // Метод Рунге-Кутты 4-ого порядка 
+    RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution, autoStep, eps, lowEps); // Метод Рунге-Кутты 4-ого порядка 
     writeScalarFile(n, FO_RG_FILE_PATH);
     writeScalarFile(numOfTimeInterv, FO_RG_FILE_PATH, true);
     writeVectorFile(dataVec, FO_RG_FILE_PATH, true);
@@ -175,17 +175,19 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
 template<typename Type>
 void temp_main(){
     Type t0 = 0.0;
-    Type T = 10.0;
+    Type T = 100.0;
     std::vector<Type> U0 = {1.0, 0.0};
-    std::size_t numOfTimeIntervals = 10;
+    std::size_t numOfTimeIntervals = 200;
     Type h = 1e-4;
     Type eps = 1e-6;
+    bool autoStep = true;
+    Type lowEps = 1e-8;
     std::size_t iterParam = 1;
     checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
-    checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1);
+    checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1, autoStep, eps, lowEps);
     checkTestAdams(sys1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_1, PC_AD_FILE_PATH_1);
-    //checkSpeedEst(sys1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
-    //SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1, SPEED_AD_4_FILE_PATH_1, SPEED_PC_FILE_PATH_1, h, eps, iterParam);
+    checkSpeedEst(sys1, realSolution1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_1, SPEED_BW_E_FILE_PATH_1, SPEED_SYM_E_FILE_PATH_1, 
+    SPEED_RG_2_FILE_PATH_1, SPEED_RG_4_FILE_PATH_1, SPEED_AD_4_FILE_PATH_1, SPEED_PC_FILE_PATH_1, h, eps, iterParam);
     Type L = 20.0;
     std::size_t N = 4;
     //checkPhaseTraces(sys1, t0, T, numOfTimeIntervals, L, N, PHASE_FW_E_FILE_PATH_1, PHASE_BW_E_FILE_PATH_1, 
@@ -198,9 +200,11 @@ void temp_main(){
     numOfTimeIntervals = 2000;
     h = 1e-4;
     eps = 1e-6;
+    autoStep = false;
+    lowEps = 1e-8;
     iterParam = 1;
     checkTestEuler(sysVar1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_2, BW_E_FILE_PATH_2, SYM_E_FILE_PATH_2, h, eps, iterParam);
-    //checkTestRungeKutta(sysVar1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_2, FO_RG_FILE_PATH_2);
+    checkTestRungeKutta(sysVar1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_2, FO_RG_FILE_PATH_2, autoStep, eps, lowEps);
     checkTestAdams(sysVar1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_2, PC_AD_FILE_PATH_2);
     //checkSpeedEst(sysVar1, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_2, SPEED_BW_E_FILE_PATH_2, SPEED_SYM_E_FILE_PATH_2,
     //SPEED_RG_2_FILE_PATH_2, SPEED_RG_4_FILE_PATH_2, SPEED_AD_4_FILE_PATH_2, SPEED_PC_FILE_PATH_2, h, eps, iterParam);
@@ -216,9 +220,11 @@ void temp_main(){
     numOfTimeIntervals = 1000;
     h = 1e-4;
     eps = 1e-6;
+    autoStep = false; 
+    lowEps = 1e-8;
     iterParam = 1;
     checkTestEuler(sysVar9, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_3, BW_E_FILE_PATH_3, SYM_E_FILE_PATH_3, h, eps, iterParam);
-    //checkTestRungeKutta(sysVar9, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_3, FO_RG_FILE_PATH_3);
+    checkTestRungeKutta(sysVar9, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_3, FO_RG_FILE_PATH_3, autoStep, eps, lowEps);
     checkTestAdams(sysVar9, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_3, PC_AD_FILE_PATH_3);
     //checkSpeedEst(sysVar9, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_3, SPEED_BW_E_FILE_PATH_3, SPEED_SYM_E_FILE_PATH_3,
     //SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, SPEED_AD_4_FILE_PATH_3, SPEED_PC_FILE_PATH_3, h, eps, iterParam);

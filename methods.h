@@ -315,14 +315,6 @@ std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, const std::vector<Type
 std::vector<std::vector<Type>> &solution, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 
 template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
-DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
-
-template<typename Type>
-Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
-DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam);
-
-template<typename Type>
 std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, bool autoStep = true, Type eps = 1e-4, Type lowEps = 1e-6);
 
@@ -345,5 +337,13 @@ std::vector<std::vector<Type>> &solution);
 template<typename Type>
 std::size_t getPhaseTraces(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &dataMatrix, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
+
+template<typename Type>
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
+
+template<typename Type>
+Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
+DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1);
 
 #endif

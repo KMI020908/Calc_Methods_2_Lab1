@@ -2928,7 +2928,7 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                     numOfIntervals = std::pow(2.0, numOfChanges);
                 }
             } while (true);
-            if (diffYNorm <= lowEps && halfTau < startTau){
+            if (diffYNorm <= lowEps && tau < startTau){
                 tau *= 2.0;
                 numOfChanges--;
             }
@@ -3036,7 +3036,7 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                     halfY = halfY + (halfTau / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4);
                     tempT += halfTau;
                 }
-                diffYNorm = normOfVector((halfY - nextY), 2.0) / 3.0;
+                diffYNorm = normOfVector((halfY - nextY), 2.0) / 15.0;
                 nextY = halfY;
                 if (diffYNorm < eps){
                     break;
@@ -3046,7 +3046,7 @@ std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
                     numOfIntervals = std::pow(2.0, numOfChanges);
                 }
             } while (true);
-            if (diffYNorm <= lowEps && halfTau < startTau){
+            if (diffYNorm <= lowEps && tau < startTau){
                 tau *= 2.0;
                 numOfChanges--;
             }
