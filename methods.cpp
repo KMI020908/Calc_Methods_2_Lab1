@@ -2736,8 +2736,6 @@ Type partialDiff(std::vector<Type>(*fSys)(Type t, const std::vector<Type> &x), s
 template<typename Type>
 std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::size_t n = U0.size();
     solution.resize(n);
     for (std::size_t i = 0; i < n; i++){
@@ -2750,8 +2748,9 @@ std::vector<std::vector<Type>> &solution){
     for (std::size_t i = 0; i < n; i++){
         y.push_back(U0[i]);
     }
+    Type tau = (T - t0) / numOfTimeInterv;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        y = y + tau * f(tGrid[k], y);
+        y = y + tau * f(t0 + k * tau, y);
         for (std::size_t i = 0; i < n; i++){
             solution[i].push_back(y[i]);
         }
@@ -2763,8 +2762,6 @@ std::vector<std::vector<Type>> &solution){
 template<typename Type>
 std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
     std::size_t n = U0.size();
     solution.resize(n);
     for (std::size_t i = 0; i < n; i++){
@@ -2781,6 +2778,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
     for (std::size_t i = 0; i < n; i++){
         prevYVec.push_back(YVec[i] + 2.0 * eps);
     }
+    Type tau = (T - t0) / numOfTimeInterv;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){ // Цикл по времени 
         while (normOfVector(YVec - prevYVec, 2.0) > eps){ // Цикл решения системы внешними итерациями по Зейделю
             for (std::size_t i = 0; i < n; i++){
@@ -2788,7 +2786,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
             }
             for (std::size_t i = 0; i < n; i++){ // Проход по n скалярным уравнениям 
                 for (std::size_t m = 0; m < iterParam; m++){ // Проходы по методу Ньютона
-                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - tau * f(tGrid[k + 1], YVec)[i]) / (1.0 - tau * partialDiff(f, i, i, tGrid[k + 1], YVec, h));
+                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - tau * f(t0 + (k + 1) * tau, YVec)[i]) / (1.0 - tau * partialDiff(f, i, i, t0 + (k + 1) * tau, YVec, h));
                 }
             }
         }
@@ -2806,8 +2804,6 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
 template<typename Type>
 std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
     std::size_t n = U0.size();
     solution.resize(n);
     for (std::size_t i = 0; i < n; i++){
@@ -2825,9 +2821,10 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
         prevYVec.push_back(YVec[i] + 2.0 * eps);
     }
     std::vector<Type> fkVec(n);
+    Type tau = (T - t0) / numOfTimeInterv;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){ // Цикл по времени 
         for (std::size_t i = 0; i < n; i++){
-            fkVec[i] = f(tGrid[k], YVec)[i];
+            fkVec[i] = f(t0 + k * tau, YVec)[i];
         }
         while (normOfVector(YVec - prevYVec, 2.0) > eps){ // Цикл решения системы внешними итерациями по Зейделю
             for (std::size_t i = 0; i < n; i++){
@@ -2835,7 +2832,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
             }
             for (std::size_t i = 0; i < n; i++){ // Проход по n скалярным уравнениям 
                 for (std::size_t m = 0; m < iterParam; m++){ // Проходы по методу Ньютона
-                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - (tau / 2.0) * (f(tGrid[k + 1], YVec)[i] + fkVec[i])) / (1.0 - (tau / 2.0) * partialDiff(f, i, i, tGrid[k + 1], YVec, h));
+                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - (tau / 2.0) * (f(t0 + (k + 1) * tau, YVec)[i] + fkVec[i])) / (1.0 - (tau / 2.0) * partialDiff(f, i, i, t0 + (k + 1) * tau, YVec, h));
                 }
             }
         }
@@ -3268,9 +3265,9 @@ template<typename Type>
 Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
     speedResult.clear();
-    std::size_t n = numOfTimeInterv + 1;
+    std::size_t n = numOfTimeInterv;
     std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::vector<std::vector<Type>> solution;
     switch (flag){
         case FW_EULER:
@@ -3372,9 +3369,9 @@ template<typename Type>
 Type getSpeedEstimateDiffSystem(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type(*realSolution)(Type t), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv, 
 DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::size_t iterParam){
     speedResult.clear();
-    std::size_t n = numOfTimeInterv + 1;
+    std::size_t n = numOfTimeInterv;
     std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv + 1, tGrid);
+    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::vector<std::vector<Type>> solution;
     switch (flag){
         case FW_EULER:
