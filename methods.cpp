@@ -2737,22 +2737,25 @@ template<typename Type>
 std::size_t forwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
     std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
+    solution.resize(n + 1);
+    for (std::size_t i = 0; i < n + 1; i++){
         solution[i].clear();
     }
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
+        solution[i + 1].push_back(U0[i]);
     }
     std::vector<Type> y;
     for (std::size_t i = 0; i < n; i++){
         y.push_back(U0[i]);
     }
     Type tau = (T - t0) / numOfTimeInterv;
+    Type tempT = t0;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        y = y + tau * f(t0 + k * tau, y);
+        y = y + tau * f(tempT, y);
+        tempT += tau;
+        solution[0].push_back(tempT); 
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
+            solution[i + 1].push_back(y[i]);
         }
     }
     return n;
@@ -2763,12 +2766,13 @@ template<typename Type>
 std::size_t backwardEulerMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
     std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
+    solution.resize(n + 1);
+    for (std::size_t i = 0; i < n + 1; i++){
         solution[i].clear();
     }
+    solution[0].push_back(t0);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
+        solution[i + 1].push_back(U0[i]);
     }
     std::vector<Type> YVec;
     for (std::size_t i = 0; i < n; i++){
@@ -2779,6 +2783,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
         prevYVec.push_back(YVec[i] + 2.0 * eps);
     }
     Type tau = (T - t0) / numOfTimeInterv;
+    Type nextT = t0 + tau;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){ // Цикл по времени 
         while (normOfVector(YVec - prevYVec, 2.0) > eps){ // Цикл решения системы внешними итерациями по Зейделю
             for (std::size_t i = 0; i < n; i++){
@@ -2786,13 +2791,15 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
             }
             for (std::size_t i = 0; i < n; i++){ // Проход по n скалярным уравнениям 
                 for (std::size_t m = 0; m < iterParam; m++){ // Проходы по методу Ньютона
-                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - tau * f(t0 + (k + 1) * tau, YVec)[i]) / (1.0 - tau * partialDiff(f, i, i, t0 + (k + 1) * tau, YVec, h));
+                    YVec[i] = YVec[i] - (YVec[i] - solution[i + 1][k] - tau * f(nextT, YVec)[i]) / (1.0 - tau * partialDiff(f, i, i, nextT, YVec, h));
                 }
             }
         }
+        solution[0].push_back(nextT);
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(YVec[i]);
+            solution[i + 1].push_back(YVec[i]);
         }
+        nextT += tau;
         for (std::size_t i = 0; i < n; i++){
             prevYVec[i] = YVec[i] + 2.0 * eps;
         }     
@@ -2805,12 +2812,13 @@ template<typename Type>
 std::size_t symmetricScheme(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterParam){
     std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
+    solution.resize(n + 1);
+    for (std::size_t i = 0; i < n + 1; i++){
         solution[i].clear();
     }
+    solution[0].push_back(t0);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
+        solution[i + 1].push_back(U0[i]);
     }
     std::vector<Type> YVec;
     for (std::size_t i = 0; i < n; i++){
@@ -2822,6 +2830,7 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
     }
     std::vector<Type> fkVec(n);
     Type tau = (T - t0) / numOfTimeInterv;
+    Type nextT = t0 + tau;
     for (std::size_t k = 0; k < numOfTimeInterv; k++){ // Цикл по времени 
         for (std::size_t i = 0; i < n; i++){
             fkVec[i] = f(t0 + k * tau, YVec)[i];
@@ -2832,13 +2841,15 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
             }
             for (std::size_t i = 0; i < n; i++){ // Проход по n скалярным уравнениям 
                 for (std::size_t m = 0; m < iterParam; m++){ // Проходы по методу Ньютона
-                    YVec[i] = YVec[i] - (YVec[i] - solution[i][k] - (tau / 2.0) * (f(t0 + (k + 1) * tau, YVec)[i] + fkVec[i])) / (1.0 - (tau / 2.0) * partialDiff(f, i, i, t0 + (k + 1) * tau, YVec, h));
+                    YVec[i] = YVec[i] - (YVec[i] - solution[i + 1][k] - (tau / 2.0) * (f(nextT, YVec)[i] + fkVec[i])) / (1.0 - (tau / 2.0) * partialDiff(f, i, i, nextT, YVec, h));
                 }
             }
         }
+        solution[0].push_back(nextT);
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(YVec[i]);
+            solution[i + 1].push_back(YVec[i]);
         }
+        nextT += tau;
         for (std::size_t i = 0; i < n; i++){
             prevYVec[i] = YVec[i] + 2.0 * eps;
         }     
@@ -2850,92 +2861,90 @@ std::vector<std::vector<Type>> &solution, Type h, Type eps, std::size_t iterPara
 template<typename Type>
 std::size_t RungeKuttaMethod2(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution, bool autoStep, Type eps, Type lowEps){
-    std::vector<Type> tGrid;
-    const Type startTau = getUniformGrid(t0, T, numOfTimeInterv, tGrid); // Начальный шаг
     std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
+    solution.resize(n + 1);
+    for (std::size_t i = 0; i < n + 1; i++){
         solution[i].clear();
     }
+    solution[0].push_back(t0);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
+        solution[i + 1].push_back(U0[i]);
     }
 
+    std::vector<Type> k1(n);
+    std::vector<Type> k2(n);
+    std::vector<Type> shiftY(n);
+
+    Type tau = (T - t0) / numOfTimeInterv; // Текущий шаг
+    std::size_t numOfChanges = 0; // Количество изменений начального шага
+    std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
     std::vector<Type> tempY; // Текущий y
     for (std::size_t i = 0; i < n; i++){
         tempY.push_back(U0[i]);
     }
     std::vector<Type> nextY(n); // Следующий y
     std::vector<Type> halfY(n); // y при уменьшении шага в 2 раза
-
-    std::vector<Type> k1(n);
-    std::vector<Type> k2(n);
-    std::vector<Type> shiftY(n);
-
-    Type tau = startTau; // Текущий шаг
-    std::size_t numOfChanges = 0; // Количество изменений начального шага
-    std::size_t numOfIntervals = 0; // Количество подотрезков в текущем отрезке
-    for (std::size_t k = 0; k < numOfTimeInterv; k++){
-        Type tempT = tGrid[k];
-        numOfIntervals = std::pow(2.0, numOfChanges);
-
+    Type tempT = t0;
+    Type nextT = tempT + tau;
+    while(tempT < T){
         // Текущий шаг
-        for (std::size_t m = 0; m < numOfIntervals; m++){
-            for (std::size_t i = 0; i < n; i++){
-                k1[i] = f(tempT, tempY)[i];
-            }
-            for (std::size_t i = 0; i < n; i++){
-                for (std::size_t j = 0; j < n; j++){
-                    shiftY[j] = tempY[j] + (tau / 2.0) * k1[j];
-                }
-                k2[i] = f(tempT + tau / 2.0, shiftY)[i];
-            }
-            nextY = tempY + tau * k2; 
-            tempT += tau;
+        for (std::size_t i = 0; i < n; i++){
+            k1[i] = f(tempT, tempY)[i];
         }
-
+        for (std::size_t i = 0; i < n; i++){
+            for (std::size_t j = 0; j < n; j++){
+                shiftY[j] = tempY[j] + (tau / 2.0) * k1[j];
+            }
+            k2[i] = f(tempT + tau / 2.0, shiftY)[i];
+        }
+        nextY = tempY + tau * k2;
+    
         // Уменьшенный шаг
         if (autoStep){
-            Type diffYNorm = 0.0; // Норма разности между векторами
-            Type halfTau = 0.0; // Уменьшенный текущий шаг
+            Type nextTau = tau;
+            Type diffYNorm = 0.0;
+            Type halfT = tempT;
+            Type halfTau = tau / 2.0;
+            std::size_t numOfChanges = 1;
             do{
-                halfTau = tau / 2.0;
-                halfY = tempY; 
-                tempT = tGrid[k];
-                for (std::size_t m = 0; m < 2.0 * numOfIntervals; m++){
+                halfY = tempY;
+                for (std::size_t m = 0; m < std::pow(2.0, numOfChanges); m++){
                     for (std::size_t i = 0; i < n; i++){
-                        k1[i] = f(tempT, halfY)[i];
+                        k1[i] = f(halfT, halfY)[i];
                     }
                     for (std::size_t i = 0; i < n; i++){
                         for (std::size_t j = 0; j < n; j++){
                             shiftY[j] = halfY[j] + (halfTau / 2.0) * k1[j];
                         }
-                        k2[i] = f(tempT + halfTau / 2.0, shiftY)[i];
+                        k2[i] = f(halfT + halfTau / 2.0, shiftY)[i];
                     }
                     halfY = halfY + halfTau * k2;
-                    tempT += halfTau;
+                    halfT += halfTau;                
                 }
-                diffYNorm = normOfVector((halfY - nextY), 2.0) / 3.0;
+                diffYNorm = normOfVector(nextY - halfY);
                 nextY = halfY;
                 if (diffYNorm < eps){
                     break;
-                }else{
-                    tau /= 2.0;
-                    numOfChanges++;
-                    numOfIntervals = std::pow(2.0, numOfChanges);
                 }
+                nextTau = nextTau / 2.0;
+                halfTau /= 2.0;
+                halfT = tempT;
+                numOfChanges++;
             } while (true);
-            if (diffYNorm <= lowEps && tau < startTau){
-                tau *= 2.0;
-                numOfChanges--;
+            if (diffYNorm < lowEps){
+                nextTau *= 2.0;
             }
+            tau = nextTau; 
+        }
+        solution[0].push_back(nextT);
+        for (std::size_t i = 0; i < n; i++){
+            solution[i + 1].push_back(nextY[i]);
         }
         tempY = nextY;
-        for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(nextY[i]);
-        }
+        tempT = nextT;
+        nextT = tempT + tau;
     }
-    return numOfChanges;
+    return n;
 }
 
 // 4 - х шаговый метод Рунге - Кутты 
@@ -3091,46 +3100,54 @@ const std::vector<Type> &y0, std::vector<Type> &y){
     return n;
 }
 
-
 template<typename Type>
 std::size_t AdamsMethod(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
+    solution.resize(n + 1);
+    for (std::size_t i = 0; i < n + 1; i++){
         solution[i].clear();
     }
+    solution[0].push_back(t0);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
+        solution[i + 1].push_back(U0[i]);
     }
+    Type tau = (T - t0) / numOfTimeInterv;
+    Type tempT = t0;
     // Первые три итерации метода Рунге-Кутты 4-ого порядка
     std::vector<Type> y0;
     for (std::size_t i = 0; i < n; i++){
         y0.push_back(U0[i]);
     }
     std::vector<Type> y1;
-    iterationOfRungeKutta4(f, tGrid[0], tau, U0, y1);
+    iterationOfRungeKutta4(f, tempT, tau, U0, y1);
+    tempT += tau;
+    solution[0].push_back(tempT);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(y1[i]);
+        solution[i + 1].push_back(y1[i]);
     }
     std::vector<Type> y2;
-    iterationOfRungeKutta4(f, tGrid[1], tau, y1, y2);
+    iterationOfRungeKutta4(f, tempT, tau, y1, y2);
+    tempT += tau;
+    solution[0].push_back(tempT);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(y2[i]);
+        solution[i + 1].push_back(y2[i]);
     }
     std::vector<Type> y3;
-    iterationOfRungeKutta4(f, tGrid[2], tau, y2, y3);
+    iterationOfRungeKutta4(f, tempT, tau, y2, y3);
+    tempT += tau;
+    solution[0].push_back(tempT);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(y3[i]);
+        solution[i + 1].push_back(y3[i]);
     }    
     std::vector<Type> y(n);
     // Итерации метода Адамса
     for (std::size_t k = 3; k < numOfTimeInterv; k++){
-        y = y3 + (tau / 24.0) * (55.0 * f(tGrid[k], y3) - 59.0 * f(tGrid[k - 1], y2) + 37.0 * f(tGrid[k - 2], y1) - 9.0 * f(tGrid[k - 3], y0));
+        y = y3 + (tau / 24.0) * (55.0 * f(tempT, y3) - 59.0 * f(tempT - tau, y2) + 37.0 * f(tempT - 2.0 * tau, y1) - 9.0 * f(tempT - 3.0 * tau, y0));
+        tempT += tau;
+        solution[0].push_back(tempT);
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
+            solution[i + 1].push_back(y[i]);
         }
         for (std::size_t i = 0; i < n; i++){
             y0[i] = y1[i];
@@ -3145,47 +3162,56 @@ std::vector<std::vector<Type>> &solution){
 template<typename Type>
 std::size_t predicCorrect(std::vector<Type>(*f)(Type t, const std::vector<Type> &U), Type t0, Type T, const std::vector<Type> &U0, std::size_t numOfTimeInterv,
 std::vector<std::vector<Type>> &solution){
-    std::vector<Type> tGrid;
-    Type tau = getUniformGrid(t0, T, numOfTimeInterv, tGrid);
     std::size_t n = U0.size();
-    solution.resize(n);
-    for (std::size_t i = 0; i < n; i++){
+    solution.resize(n + 1);
+    for (std::size_t i = 0; i < n + 1; i++){
         solution[i].clear();
     }
+    solution[0].push_back(t0);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(U0[i]);
+        solution[i + 1].push_back(U0[i]);
     }
+    Type tau = (T - t0) / numOfTimeInterv;
+    Type tempT = t0;
     // Первые три итерации метода Рунге-Кутты 4-ого порядка
     std::vector<Type> y0;
     for (std::size_t i = 0; i < n; i++){
         y0.push_back(U0[i]);
     }
     std::vector<Type> y1;
-    iterationOfRungeKutta4(f, tGrid[0], tau, U0, y1);
+    iterationOfRungeKutta4(f, tempT, tau, U0, y1);
+    tempT += tau;
+    solution[0].push_back(tempT);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(y1[i]);
+        solution[i + 1].push_back(y1[i]);
     }
     std::vector<Type> y2;
-    iterationOfRungeKutta4(f, tGrid[1], tau, y1, y2);
+    iterationOfRungeKutta4(f, tempT, tau, y1, y2);
+    tempT += tau;
+    solution[0].push_back(tempT);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(y2[i]);
+        solution[i + 1].push_back(y2[i]);
     }
     std::vector<Type> y3;
-    iterationOfRungeKutta4(f, tGrid[2], tau, y2, y3);
+    iterationOfRungeKutta4(f, tempT, tau, y2, y3);
+    tempT += tau;
+    solution[0].push_back(tempT);
     for (std::size_t i = 0; i < n; i++){
-        solution[i].push_back(y3[i]);
+        solution[i + 1].push_back(y3[i]);
     }    
     std::vector<Type> y(n);
     // Итерации метода Предсказание - коррекция
     std::vector<Type> fVec(n);
     for (std::size_t k = 3; k < numOfTimeInterv; k++){
-        y = y3 + (tau / 24.0) * (55.0 * f(tGrid[k], y3) - 59.0 * f(tGrid[k - 1], y2) + 37.0 * f(tGrid[k - 2], y1) - 9.0 * f(tGrid[k - 3], y0));
+        y = y3 + (tau / 24.0) * (55.0 * f(tempT, y3) - 59.0 * f(tempT - tau, y2) + 37.0 * f(tempT - 2.0 * tau, y1) - 9.0 * f(tempT - 3.0 * tau, y0));
         for (std::size_t i = 0; i < n; i++){
-            fVec[i] = f(tGrid[k + 1], y)[i];
+            fVec[i] = f(tempT + tau, y)[i];
         }
-        y = y3 + (tau / 24.0) * (9.0 * fVec + 19.0 * f(tGrid[k], y3) - 5.0 * f(tGrid[k - 1], y2) + f(tGrid[k - 2], y1));
+        y = y3 + (tau / 24.0) * (9.0 * fVec + 19.0 * f(tempT, y3) - 5.0 * f(tempT - tau, y2) + f(tempT - 2.0 * tau, y1));
+        tempT += tau;
+        solution[0].push_back(tempT);
         for (std::size_t i = 0; i < n; i++){
-            solution[i].push_back(y[i]);
+            solution[i + 1].push_back(y[i]);
         }
         for (std::size_t i = 0; i < n; i++){
             y0[i] = y1[i];
@@ -3249,10 +3275,10 @@ DIFF_METHOD_FLAG flag, Type L, std::size_t N, std::vector<std::vector<Type>> &da
                     forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution);
             }
             for (std::size_t k = 2; k < numOfTimeInterv + 3; k++){
-                dataVec[k] = solution[0][k - 2];
+                dataVec[k] = solution[1][k - 2];
             }
             for (std::size_t k = numOfTimeInterv + 3; k < 2 * numOfTimeInterv + 4; k++){
-                dataVec[k] = solution[1][k - numOfTimeInterv - 3];
+                dataVec[k] = solution[2][k - numOfTimeInterv - 3];
             }
             dataMatrix.push_back(dataVec);
         }
@@ -3296,7 +3322,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
     }
     std::vector<Type> f1;
     for (std::size_t k = 0; k < n; k++){
-        f1.push_back(solution[0][k]);
+        f1.push_back(solution[1][k]);
     }
     n = 2 * numOfTimeInterv;
     switch (flag){
@@ -3326,7 +3352,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
     }
     std::vector<Type> f2;
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        f2.push_back(solution[0][2 * k]);
+        f2.push_back(solution[1][2 * k]);
     }
     n = 4 * numOfTimeInterv;
     switch (flag){
@@ -3356,7 +3382,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
     }
     std::vector<Type> f3;
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        f3.push_back(solution[0][4 * k]);
+        f3.push_back(solution[1][4 * k]);
     }
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
         speedResult.push_back(log2(std::abs((f1[k] - f2[k]) / (f2[k] - f3[k]))));
@@ -3400,7 +3426,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
     }
     std::vector<Type> f1;
     for (std::size_t k = 0; k < n; k++){
-        f1.push_back(solution[0][k]);
+        f1.push_back(solution[1][k]);
     }
     n = 2 * numOfTimeInterv;
     switch (flag){
@@ -3430,7 +3456,7 @@ DIFF_METHOD_FLAG flag, std::vector<Type> &speedResult, Type h, Type eps, std::si
     }
     std::vector<Type> f2;
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
-        f2.push_back(solution[0][2 * k]);
+        f2.push_back(solution[1][2 * k]);
     }
     for (std::size_t k = 0; k < numOfTimeInterv + 1; k++){
         speedResult.push_back(log2(std::abs((f1[k] - realSolution(tGrid[k])) / (f2[k] - realSolution(tGrid[k])))));

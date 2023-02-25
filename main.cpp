@@ -18,31 +18,13 @@ Type h = 1e-4, Type eps = 1e-6, std::size_t iterParam = 1){
     std::vector<std::vector<double>> solution; // Матрица решений
 
     forwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution); // Явный метод Эйлера
-    writeScalarFile(n, FW_E_FILE_PATH);
-    writeScalarFile(numOfTimeInterv, FW_E_FILE_PATH, true);
-    writeVectorFile(dataVec, FW_E_FILE_PATH, true);
-    writeVectorFile(tGrid, FW_E_FILE_PATH, true);
-    for (std::size_t i = 0; i < n; i++){
-        writeVectorFile(solution[i], FW_E_FILE_PATH, true);
-    }
+    writeMatrixFile(solution, FW_E_FILE_PATH);
 
     backwardEulerMethod(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam); // Неявный метод Эйлера
-    writeScalarFile(n, BW_E_FILE_PATH);
-    writeScalarFile(numOfTimeInterv, BW_E_FILE_PATH, true);
-    writeVectorFile(dataVec, BW_E_FILE_PATH, true);
-    writeVectorFile(tGrid, BW_E_FILE_PATH, true);
-    for (std::size_t i = 0; i < n; i++){
-        writeVectorFile(solution[i], BW_E_FILE_PATH, true);
-    }
+    writeMatrixFile(solution, BW_E_FILE_PATH);
 
     symmetricScheme(f, t0, T, U0, numOfTimeInterv, solution, h, eps, iterParam); // Симметричная схема
-    writeScalarFile(n, SYM_E_FILE_PATH);
-    writeScalarFile(numOfTimeInterv, SYM_E_FILE_PATH, true);
-    writeVectorFile(dataVec, SYM_E_FILE_PATH, true);
-    writeVectorFile(tGrid, SYM_E_FILE_PATH, true);
-    for (std::size_t i = 0; i < n; i++){
-        writeVectorFile(solution[i], SYM_E_FILE_PATH, true);
-    }
+    writeMatrixFile(solution, SYM_E_FILE_PATH);
 }
 
 // Проверка методов Рунге-Кутты
@@ -59,10 +41,10 @@ const std::string &TW_RG_FILE_PATH, const std::string &FO_RG_FILE_PATH, bool aut
     writeScalarFile(n, TW_RG_FILE_PATH);
     writeScalarFile(numOfTimeInterv, TW_RG_FILE_PATH, true);
     writeVectorFile(dataVec, TW_RG_FILE_PATH, true);
-    writeVectorFile(tGrid, TW_RG_FILE_PATH, true);
-    for (std::size_t i = 0; i < n; i++){
+    for (std::size_t i = 0; i < n + 1; i++){
         writeVectorFile(solution[i], TW_RG_FILE_PATH, true);
     }
+    writeMatrixFile(solution, TW_RG_FILE_PATH);
 
     RungeKuttaMethod4(f, t0, T, U0, numOfTimeInterv, solution, autoStep, eps, lowEps); // Метод Рунге-Кутты 4-ого порядка 
     writeScalarFile(n, FO_RG_FILE_PATH);
@@ -92,6 +74,7 @@ const std::string &FO_AD_FILE_PATH, const std::string &PC_AD_FILE_PATH){
     for (std::size_t i = 0; i < n; i++){
         writeVectorFile(solution[i], FO_AD_FILE_PATH, true);
     }
+    writeMatrixFile(solution, FO_AD_FILE_PATH);
 
     predicCorrect(f, t0, T, U0, numOfTimeInterv, solution); // Метод предсказание-коррекция 
     writeScalarFile(n, PC_AD_FILE_PATH);
@@ -101,6 +84,7 @@ const std::string &FO_AD_FILE_PATH, const std::string &PC_AD_FILE_PATH){
     for (std::size_t i = 0; i < n; i++){
         writeVectorFile(solution[i], PC_AD_FILE_PATH, true);
     }
+    writeMatrixFile(solution, PC_AD_FILE_PATH);
 }
 
 // Оценка скорости, когда неизвестно решение
@@ -198,10 +182,10 @@ void temp_main(){
     std::size_t numOfTimeIntervals = 1000;
     //std::size_t numOfTimeIntervals = 6;
     Type h = 1e-4;
-    Type eps = 1e-6;
+    Type eps = 1e-4;
     bool autoStep = true;
-    Type lowEps = 1e-8;
-    std::size_t iterParam = 15;
+    Type lowEps = 30 * 1e-4;
+    std::size_t iterParam = 1;
     checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
     checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1, autoStep, eps, lowEps);
     checkTestAdams(sys1, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_1, PC_AD_FILE_PATH_1);
@@ -235,10 +219,10 @@ void temp_main(){
     //PHASE_SYM_E_FILE_PATH_2, PHASE_RG_2_FILE_PATH_2, PHASE_RG_4_FILE_PATH_2, PHASE_AD_4_FILE_PATH_2, PHASE_PC_FILE_PATH_2, h, eps, iterParam);
 
     t0 = 0.0;
-    T = 100.0;
+    T = 10.0;
     U0[0] = 0.4;
     U0[1] = 0.0;
-    numOfTimeIntervals = 1000;
+    numOfTimeIntervals = 100;
     h = 1e-4;
     eps = 1e-6;
     autoStep = false; 
@@ -247,8 +231,8 @@ void temp_main(){
     //checkTestEuler(sysVar9, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_3, BW_E_FILE_PATH_3, SYM_E_FILE_PATH_3, h, eps, iterParam);
     checkTestRungeKutta(sysVar9, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_3, FO_RG_FILE_PATH_3, autoStep, eps, lowEps);
     checkTestAdams(sysVar9, t0, T, U0, numOfTimeIntervals, FO_AD_FILE_PATH_3, PC_AD_FILE_PATH_3);
-    //checkSpeedEst(sysVar9, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_3, SPEED_BW_E_FILE_PATH_3, SPEED_SYM_E_FILE_PATH_3,
-    //SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, SPEED_AD_4_FILE_PATH_3, SPEED_PC_FILE_PATH_3, h, eps, iterParam);
+    checkSpeedEst(sysVar9, t0, T, U0, numOfTimeIntervals, SPEED_FW_E_FILE_PATH_3, SPEED_BW_E_FILE_PATH_3, SPEED_SYM_E_FILE_PATH_3,
+    SPEED_RG_2_FILE_PATH_3, SPEED_RG_4_FILE_PATH_3, SPEED_AD_4_FILE_PATH_3, SPEED_PC_FILE_PATH_3, h, eps, iterParam);
     //RungeKuttaStepAnalys(sysVar9, t0, T, U0, numOfTimeIntervals, SA_RG_2_FILE_PATH_3, SA_RG_4_FILE_PATH_3, eps, lowEps);
     L = 20.0;
     N = 4;
