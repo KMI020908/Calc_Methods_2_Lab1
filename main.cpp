@@ -156,9 +156,9 @@ void temp_main(){
     std::vector<Type> U0 = {1.0, 0.0};
     std::size_t numOfTimeIntervals = 100;
     Type h = 1e-4;
-    Type eps = 1e-6;
-    bool autoStep = true;
-    Type lowEps = 1e-7;
+    Type eps = 1e-5;
+    bool autoStep = false;
+    Type lowEps = 1e-6;
     std::size_t iterParam = 1;
     checkTestEuler(sys1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_1, BW_E_FILE_PATH_1, SYM_E_FILE_PATH_1, h, eps, iterParam);
     checkTestRungeKutta(sys1, t0, T, U0, numOfTimeIntervals, TW_RG_FILE_PATH_1, FO_RG_FILE_PATH_1, autoStep, eps, lowEps);
@@ -179,7 +179,7 @@ void temp_main(){
     numOfTimeIntervals = 100;
     h = 1e-3;
     eps = 1e-4;
-    autoStep = true;
+    autoStep = false;
     lowEps = 1e-5;
     iterParam = 10;
     checkTestEuler(sysVar1, t0, T, U0, numOfTimeIntervals, FW_E_FILE_PATH_2, BW_E_FILE_PATH_2, SYM_E_FILE_PATH_2, h, eps, iterParam);
